@@ -58,6 +58,18 @@
     return window.btoa(binary);
   }
 
+  function arrayBufferToHexString(buffer) {
+    var hexChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+    var hex = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i=0; i<len; i++) {
+      hex += hexChars[Math.floor(bytes[i]/16)] + hexChars[bytes[i]%16];
+    }
+    console.log('converted', buffer, hex);
+    return hex;
+  }
+
   function importKeyBundle(aesKeyAB, hmacKeyAB) {
     var pAes = window.crypto.subtle.importKey('raw', aesKeyAB,
                                           { name: 'AES-CBC', length: 256 },
@@ -187,7 +199,7 @@
     }
     console.log('using this key bundle', keyBundle);
     return crypto.subtle.verify({ name: 'HMAC', hash: 'SHA-256' },
-                                keyBundle.hmac, base64StringToByteArray(recordEnc.hmac),
+                                keyBundle.hmac, hexStringToByteArray(recordEnc.hmac),
                                 rawStringToByteArray(recordEnc.ciphertext)
                                ).then(function (result) {
       console.log('hmac check result', result)
@@ -252,7 +264,7 @@
                          rawStringToByteArray(ciphertextB64)
                         ).then(function(hmac) {
         return JSON.stringify({
-          hmac: arrayBufferToBase64String(hmac),
+          hmac: arrayBufferToHexString(hmac),
           ciphertext: ciphertextB64,
           IV: arrayBufferToBase64String(IV)
         });
