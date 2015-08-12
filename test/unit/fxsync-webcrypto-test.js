@@ -29,14 +29,13 @@ test('setKeys populates mainSyncKey and defaultDecryptionKey correctly', functio
   var fswc = new FxSyncWebCrypto()
   fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
     assertEqual(typeof fswc.mainSyncKey, 'object');
-    //FIXME: is there a nicer way to check an object's prototype?
-    assertEqual(fswc.mainSyncKey.aes.toString(), '[object CryptoKey]');
-    assertEqual(fswc.mainSyncKey.hmac.toString(), '[object CryptoKey]');
+    assertEqual(fswc.mainSyncKey.aes instanceof CryptoKey, true);
+    assertEqual(fswc.mainSyncKey.hmac instanceof CryptoKey, true);
     assertEqual(typeof fswc.syncKeys, 'object');
     assertEqual(Array.isArray(fswc.syncKeys.default), true);
     assertEqual(typeof fswc.syncKeys.defaultAsKeyBundle, 'object');
-    assertEqual(fswc.syncKeys.defaultAsKeyBundle.aes.toString(), '[object CryptoKey]');
-    assertEqual(fswc.syncKeys.defaultAsKeyBundle.hmac.toString(), '[object CryptoKey]');
+    assertEqual(fswc.syncKeys.defaultAsKeyBundle instanceof CryptoKey, true);
+    assertEqual(fswc.syncKeys.defaultAsKeyBundle.hmac instanceof CryptoKey, true);
   });
 });
 
