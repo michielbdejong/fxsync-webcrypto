@@ -243,20 +243,19 @@
     }
     console.log('using this key bundle', keyBundle);
     window.keyBundle = keyBundle;window.cleartext = cleartext;window.IV = IV;
-    return Promise.all([
-      crypto.subtle.sign({ name: 'HMAC', hash: 'SHA-256' },
+    return crypto.subtle.encrypt({
+      name: 'AES-CBC',
+      iv: IV
+    }, keyBundle.aes, cleartext).then(function (ciphertext) {
+      return crypto.subtle.sign({ name: 'HMAC', hash: 'SHA-256' },
                          keyBundle.hmac,
-                         cleartext
-                        ),
-      crypto.subtle.encrypt({
-        name: 'AES-CBC',
-        iv: IV
-      }, keyBundle.aes, cleartext)
-    ]).then(function (results) {
-      return JSON.stringify({
-        hmac: arrayBufferToBase64String(results[0]),
-        ciphertext: arrayBufferToBase64String(results[1]),
-        IV: arrayBufferToBase64String(IV)
+                         ciphertext
+                        ).then(function(hmac) {
+        return JSON.stringify({
+          hmac: arrayBufferToBase64String(hmac),
+          ciphertext: arrayBufferToBase64String(ciphertext),
+          IV: arrayBufferToBase64String(IV)
+        });
       });
     });
   }
