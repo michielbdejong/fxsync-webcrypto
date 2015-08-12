@@ -64,6 +64,14 @@ fswc.setKeys(kB, syncKeys).then(function() {
   console.log('Decrypted history entry', recordObj);
   // Should print this to the console:
   // Decrypted history entry Object { id: "_9sCUbahs0ay", histUri: "https://developer.mozilla.org/en-US…", title: "Object.prototype.__proto__ - JavaSc…", visits: Array[1] }
+
+  return fswc.signAndEncryptRecord({foo: 'bar'}, 'my collection');
+}).then(function(payload) {
+  return fswc.verifyAndDecryptRecord(payload, 'my collection');
+}).then(function(record) {
+  console.log('decrypted record', record);
+  // Should print this to the console:
+  // decrypted record Object { foo: "bar" }
 }, function(err) {
   console.log('error', err);
 });
@@ -87,15 +95,15 @@ Arguments:
   * hmac - a 64-byte hex string representing the 1024-bit hmac signature for the [CryptoKeys record](http://docs.services.mozilla.com/sync/storageformat5.html#crypto-keys-record) for the FxSync account.
 Returns a promise that resolves when initialization was successful, and rejects if the CryptoKeys could not be decrypted with the stretched kB, or if WebCrypto is not available.
 
-### signAndEncrypt
+### signAndEncryptRecord
 TODO: implement
 Arguments:
-* cleartext: The string to sign and encrypt
+* record: The object to JSON-stringify, sign, and encrypt
 * collectionName: The name of the FxSync collection for which to encrypt (see http://docs.services.mozilla.com/sync/storageformat5.html#encryption).
 Returns:
 A promise for a JSON string encoding an object with fields ciphertext, IV, and hmac, which is the payload to be uploaded to the FxSync server.
 
-### verifyAndDecrypt
+### verifyAndDecryptRecord
 TODO: hmac verification is not working yet
 This function JSON-parses the payload, checks the HMAC signature, and if that matches, uses AES-CBC to decrypt the ciphertext, given the IV.
 
@@ -103,5 +111,5 @@ Arguments:
 * payload: A JSON string encoding an object with fields ciphertext, IV, and hmac, presumably the payload of a download from the FxSync server.
 * collectionName: The name of the FxSync collection for which to decrypt (see http://docs.services.mozilla.com/sync/storageformat5.html#decryption).
 Returns:
-A promise for a string (the cleartext again that was originally encrypted on this or on another FxSync client).
+A promise for an object (the record again that was originally JSON-stringified and encrypted on this or on another FxSync client).
 

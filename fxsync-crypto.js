@@ -19,6 +19,7 @@
   };
 
   // Conversion functions:
+  // TODO: Do performance tests on a real device
   function rawStringToByteArray(str) {
     var strLen = str.length;
     var byteArray = new Uint8Array(strLen);
@@ -46,6 +47,17 @@
     }
     return byteArray;
   }
+
+  function arrayBufferToBase64String(buffer) {
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i=0; i<len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  }
+
   function importKeyBundle(aesKeyAB, hmacKeyAB) {
     var pAes = window.crypto.subtle.importKey('raw', aesKeyAB,
                                           { name: 'AES-CBC', length: 256 },
@@ -53,7 +65,7 @@
                                     );
     var pHmac =  window.crypto.subtle.importKey('raw', hmacKeyAB,
                                           { name: 'HMAC', hash: 'SHA-256' },
-                                          true, [ 'verify' ]
+                                          true, [ 'sign', 'verify' ]
                                       );
     console.log('ps', pAes, pHmac);
     return Promise.all([pAes, pHmac]).then(function(results) {
@@ -179,6 +191,7 @@
                                 keyBundle.hmac, base64StringToByteArray(recordEnc.hmac),
                                 base64StringToByteArray(recordEnc.ciphertext)
                                ).then(function (result) {
+      console.log('hmac check result', result)
       if (!result) {
         //return Promise.reject('Record verification failed with current hmac key for ' + collectionName);
       }
@@ -197,6 +210,53 @@
         return recordObj;
       }, function(err) {
         return Promise.reject('Could not decrypt record using AES part of key bundle for collection ' + collectionName);
+      });
+    });
+  }
+
+  window.FxSyncWebCrypto.prototype.signAndEncryptRecord = function(record, collectionName) {
+    var cleartext, cleartextStr, keyBundle;
+    // FIXME: I got the value 16 from
+    // https://mxr.mozilla.org/mozilla-central/source/services/crypto/modules/WeaveCrypto.js#455
+    // although I thought we were using a 256-bit AES key, so if the IV length matches the key
+    // length, then I would expect an 8 byte IV. Would be good to understand this better.
+    var IV = new Uint8Array(16);
+    var enc = {};
+
+    // Generate a random IV using the PRNG of the device
+    // FIXME: Is this a good idea? Is it easier to decrypt a ciphertext if the IV is not very
+    // random? I would think the effect is small, I also heard people using an all-zeroes IV
+    // for HKDF, but I need to ask a security guru about this.
+    window.crypto.getRandomValues(IV);
+    console.log('generated IV', IV);
+    console.log('stringifying', record)
+    try {
+      cleartextStr = JSON.stringify(record);
+    } catch(e) {
+      return Promise.reject('Record cannot be JSON-stringified');
+    }
+    cleartext = rawStringToByteArray(cleartextStr);
+    try {
+      keyBundle = this.selectKeyBundle(collectionName);
+    } catch(e) {
+      return Promise.reject('No key bundle found for ' + collectionName + ' - did you call setKeys?');
+    }
+    console.log('using this key bundle', keyBundle);
+    window.keyBundle = keyBundle;window.cleartext = cleartext;window.IV = IV;
+    return Promise.all([
+      crypto.subtle.sign({ name: 'HMAC', hash: 'SHA-256' },
+                         keyBundle.hmac,
+                         cleartext
+                        ),
+      crypto.subtle.encrypt({
+        name: 'AES-CBC',
+        iv: IV
+      }, keyBundle.aes, cleartext)
+    ]).then(function (results) {
+      return JSON.stringify({
+        hmac: arrayBufferToBase64String(results[0]),
+        ciphertext: arrayBufferToBase64String(results[1]),
+        IV: arrayBufferToBase64String(IV)
       });
     });
   }
