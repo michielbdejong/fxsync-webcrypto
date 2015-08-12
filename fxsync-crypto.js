@@ -189,7 +189,7 @@
     console.log('using this key bundle', keyBundle);
     return crypto.subtle.verify({ name: 'HMAC', hash: 'SHA-256' },
                                 keyBundle.hmac, base64StringToByteArray(recordEnc.hmac),
-                                base64StringToByteArray(recordEnc.ciphertext)
+                                rawStringToByteArray(recordEnc.ciphertext)
                                ).then(function (result) {
       console.log('hmac check result', result)
       if (!result) {
@@ -247,13 +247,14 @@
       name: 'AES-CBC',
       iv: IV
     }, keyBundle.aes, cleartext).then(function (ciphertext) {
+      var ciphertextB64 = arrayBufferToBase64String(ciphertext);
       return crypto.subtle.sign({ name: 'HMAC', hash: 'SHA-256' },
                          keyBundle.hmac,
-                         ciphertext
+                         rawStringToByteArray(ciphertextB64)
                         ).then(function(hmac) {
         return JSON.stringify({
           hmac: arrayBufferToBase64String(hmac),
-          ciphertext: arrayBufferToBase64String(ciphertext),
+          ciphertext: ciphertextB64,
           IV: arrayBufferToBase64String(IV)
         });
       });
