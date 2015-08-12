@@ -90,12 +90,11 @@
     }.bind(this));
   };
 
-  window.FxSyncWebCrypto.prototype._verifySyncKeys = function(syncKeysIVByteArray,
-                                                                syncKeysCiphertextByteArray,
+  window.FxSyncWebCrypto.prototype._verifySyncKeys = function(signedTextByteArray,
                                                                 syncKeysHmacByteArray) {
     console.log(this);
-    return crypto.subtle.verify(/*{ name: */'HMAC'/*, hash: 'AES-256' }*/, this.mainSyncKey.hmac,
-                          syncKeysHmacByteArray, syncKeysCiphertextByteArray).then(function (verification) {
+    return crypto.subtle.verify({ name: 'HMAC', hash: 'AES-256' }, this.mainSyncKey.hmac,
+                          syncKeysHmacByteArray, signedTextByteArray).then(function (verification) {
       console.log('verification', verification);
     }.bind(this), function(err) {
       console.log('error verifying syncKeys using kB', err);
@@ -104,8 +103,7 @@
   }
   
   window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
-                                                                syncKeysCiphertextByteArray,
-                                                                syncKeysHmacByteArray) {
+                                                                syncKeysCiphertextByteArray) {
     console.log(this);
     return crypto.subtle.decrypt({ name: 'AES-CBC', iv: syncKeysIVByteArray }, this.mainSyncKey.aes,
                           syncKeysCiphertextByteArray).then(function (keyBundleAB) {
@@ -146,27 +144,28 @@
     try {
       syncKeysCiphertextByteArray = base64StringToByteArray(syncKeys.ciphertext);
     } catch (e) {
-      return Promise.reject('Could not parse syncKeysCiphertext as a base64 string');
+      return Promise.reject('Could not parse syncKeys.ciphertext as a base64 string');
     }
     try {
       syncKeysIVByteArray = base64StringToByteArray(syncKeys.IV);
     } catch (e) {
-      return Promise.reject('Could not parse syncKeysIV as a base64 string');
+      return Promise.reject('Could not parse syncKeys.IV as a base64 string');
     }
     try {
       syncKeysHmacByteArray = hexStringToByteArray(syncKeys.hmac);
     } catch (e) {
-      return Promise.reject('Could not parse syncKeysHmac as a hex string');
+      return Promise.reject('Could not parse syncKeys.hmac as a hex string');
     }
 
     return this._importKb(kBByteArray).then(function() {
       console.log('kB imported', this);
-      return this._verifySyncKeys(syncKeysIVByteArray, syncKeysCiphertextByteArray,
+      // Intentionally using rawStringToByteArray instead of base64StringToByteArray on the ciphertext here - 
+      // See https://github.com/mozilla/firefox-ios/blob/1cce59c8eac282e151568f1204ffbbcc27349eff/Sync/KeyBundle.swift#L178
+      return this._verifySyncKeys(rawStringToByteArray(syncKeys.ciphertext),
                                                   syncKeysHmacByteArray);
     }.bind(this)).then(function() {
       console.log('kB imported', this);
-      return this._importSyncKeys(syncKeysIVByteArray, syncKeysCiphertextByteArray,
-                                                  syncKeysHmacByteArray);
+      return this._importSyncKeys(syncKeysIVByteArray, syncKeysCiphertextByteArray);
     }.bind(this));
   }
   
