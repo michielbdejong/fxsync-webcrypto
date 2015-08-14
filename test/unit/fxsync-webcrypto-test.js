@@ -17,6 +17,7 @@ function test(testName, runTest) {
 }
 
 var tests = [
+  /* 0 */
   function() {
     test('Constructor creates an object with the right methods', function() {
       var fswc = new FxSyncWebCrypto();
@@ -26,6 +27,7 @@ var tests = [
     });
   },
 
+  /* 1 */
   function() {
     test('setKeys populates mainSyncKey and defaultDecryptionKey correctly', function() {
       var fixture = window.fxSyncDataExample;
@@ -43,14 +45,160 @@ var tests = [
     });
   },
     
+  /* 2 */
   function() {
     test('verifyAndDecryptRecord can verify and decrypt a record', function() {
       var fixture = window.fxSyncDataExample;
-      var fswc = new FxSyncWebCrypto()
+      var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-        return fswc.verifyAndDecryptRecord(fixture.historyEntry.payload, fixture.historyEntry.collectionName);
+        return fswc.verifyAndDecryptRecord(fixture.historyEntryEnc.payload, fixture.historyEntryEnc.collectionName);
       }).then(function(decryptedRecord) {
+        console.log(JSON.stringify(decryptedRecord));
         assertEqual(typeof decryptedRecord, 'object');
+        assertEqual(decryptedRecord.id, fixture.historyEntryDec.payload.id);
+        assertEqual(decryptedRecord.histUri, fixture.historyEntryDec.payload.histUri);
+        assertEqual(decryptedRecord.title, fixture.historyEntryDec.payload.title);
+        assertEqual(Array.isArray(decryptedRecord.visits), true);
+        assertEqual(decryptedRecord.visits.length, 1);
+        assertEqual(decryptedRecord.visits[0].date, fixture.historyEntryDec.payload.visits[0].date);
+        assertEqual(decryptedRecord.visits[0].type, fixture.historyEntryDec.payload.visits[0].type);
+      });
+    });
+  },
+    
+  /* 3 */
+  function() {
+    test('signAndEncryptRecord can sign and encrypt a record', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        return fswc.signAndEncryptRecord(fixture.historyEntryDec.payload, fixture.historyEntryDec.collectionName);
+      }).then(function(encryptedRecord) {
+        assertEqual(encryptedRecord, fixture.historyEntryEnc.payload);
+      });
+    });
+  },
+   
+  /* 4 */ 
+  function() {
+    test('signAndEncryptRecord rejects promise if record is not an object', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        return fswc.signAndEncryptRecord('boo', fixture.historyEntryDec.collectionName);
+      }).then(function() {
+        assertEqual(false, true);
+      }, function(err) {
+        assertEqual(err, 'Record should be an object');
+      });
+    });
+  },
+    
+  /* 5 */
+  function() {
+    test('signAndEncryptRecord rejects promise if record cannot be JSON-stringified', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        var myObject = {};
+        myObject.cyclicReference = myObject;
+        return fswc.signAndEncryptRecord(myObject, fixture.historyEntryDec.collectionName);
+      }).then(function() {
+        assertEqual(false, true);
+      }, function(err) {
+        assertEqual(err, 'Record cannot be JSON-stringified');
+      });
+    });
+  },
+    
+  /* 6 */
+  function() {
+    test('signAndEncryptRecord rejects promise if collectionName is not a string', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        return fswc.signAndEncryptRecord(fixture.historyEntryDec.payload, 5);
+      }).then(function() {
+        assertEqual(false, true);
+      }, function(err) {
+        assertEqual(err, 'collectionName is not a string');
+      });
+    });
+  },
+    
+  /* 7 */
+  function() {
+    test('verifyAndDecryptRecord rejects promise if collectionName is not a string', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        return fswc.verifyAndDecryptRecord(fixture.historyEntryEnc.payload, 5);
+      }).then(function() {
+        assertEqual(false, true);
+      }, function(err) {
+        assertEqual(err, 'collectionName is not a string');
+      });
+    });
+  },
+    
+  /* 8 */
+  function() {
+    test('verifyAndDecryptRecord rejects promise if record is not a string', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        return fswc.verifyAndDecryptRecord(5, fixture.historyEntryEnc.collectionName);
+      }).then(function() {
+        assertEqual(false, true);
+      }, function(err) {
+        assertEqual(err, 'Payload is not a string');
+      });
+    });
+  },
+    
+  /* 9 */
+  function() {
+    test('verifyAndDecryptRecord rejects promise if record is not a JSON string', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        return fswc.verifyAndDecryptRecord('boo', fixture.historyEntryEnc.collectionName);
+      }).then(function() {
+        assertEqual(false, true);
+      }, function(err) {
+        assertEqual(err, 'Payload is not a JSON string');
+      });
+    });
+  },
+
+  /* 10 */
+  function() {
+    test('verifyAndDecryptRecord rejects promise if record hmac is wrong', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        var payloadObj = JSON.parse(fixture.historyEntryEnc.payload);
+        payloadObj.hmac = 'deadbeef';
+        return fswc.verifyAndDecryptRecord(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
+      }).then(function() {
+        assertEqual(false, true);
+      }, function(err) {
+        assertEqual(err, 'Record verification failed with current hmac key for history');
+      });
+    });
+  },
+
+  /* 11 */
+  function() {
+    test('setKeys rejects promise if syncKeys hmac is wrong', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      var syncKeysWrong = JSON.parse(JSON.stringify(fixture.syncKeys));
+      syncKeysWrong.hmac = 'deadbeef';
+      fswc.setKeys(fixture.kB, syncKeysWrong).then(function() {
+        assertEqual(false, true);
+      }, function(err) {
+        assertEqual(err, 'SyncKeys hmac could not be verified with current main key');
       });
     });
   }

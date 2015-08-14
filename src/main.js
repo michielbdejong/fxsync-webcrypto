@@ -50,10 +50,7 @@
   window.FxSyncWebCrypto.prototype._verifySyncKeys = function(signedTextByteArray,
                                                                 syncKeysHmacByteArray) {
     return crypto.subtle.verify({ name: 'HMAC', hash: 'AES-256' }, this.mainSyncKey.hmac,
-                          syncKeysHmacByteArray, signedTextByteArray).then(function (verification) {
-    }.bind(this), function(err) {
-      return Promise.reject('Could not verify crypto keys using HMAC part of stretched kB key');
-    });
+                          syncKeysHmacByteArray, signedTextByteArray);
   }
 
   window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
@@ -111,8 +108,12 @@
       // See https://github.com/mozilla/firefox-ios/blob/1cce59c8eac282e151568f1204ffbbcc27349eff/Sync/KeyBundle.swift#L178
       return this._verifySyncKeys(rawStringToByteArray(syncKeys.ciphertext),
                                                   syncKeysHmacByteArray);
-    }.bind(this)).then(function() {
-      return this._importSyncKeys(syncKeysIVByteArray, syncKeysCiphertextByteArray);
+    }.bind(this)).then(function(verified) {
+      if (verified) {
+        return this._importSyncKeys(syncKeysIVByteArray, syncKeysCiphertextByteArray);
+      } else {
+        return Promise.reject('SyncKeys hmac could not be verified with current main key');
+      }
     }.bind(this));
   }
 
@@ -122,6 +123,12 @@
 
   window.FxSyncWebCrypto.prototype.verifyAndDecryptRecord = function(payload, collectionName) {
     var record, keyBundle;
+    if (typeof payload !== 'string') {
+      return Promise.reject('Payload is not a string');
+    }
+    if (typeof collectionName !== 'string') {
+      return Promise.reject('collectionName is not a string');
+    }
     try {
       recordEnc = JSON.parse(payload);
     } catch(e) {
@@ -137,7 +144,7 @@
                                 rawStringToByteArray(recordEnc.ciphertext)
                                ).then(function (result) {
       if (!result) {
-        //return Promise.reject('Record verification failed with current hmac key for ' + collectionName);
+        return Promise.reject('Record verification failed with current hmac key for ' + collectionName);
       }
     }).then(function() {
       return crypto.subtle.decrypt({
@@ -166,6 +173,13 @@
     // length, then I would expect an 8 byte IV. Would be good to understand this better.
     var IV = new Uint8Array(16);
     var enc = {};
+
+    if (typeof record !== 'object') {
+      return Promise.reject('Record should be an object');
+    }
+    if (typeof collectionName !== 'string') {
+      return Promise.reject('collectionName is not a string');
+    }
 
     // Generate a random IV using the PRNG of the device
     // FIXME: Is this a good idea? Is it easier to decrypt a ciphertext if the IV is not very
