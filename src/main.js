@@ -1,10 +1,6 @@
 // WebCrypto-based client for Firefox Sync.
-// Requires hawk_creds.js from https://github.com/mozilla-b2g/firefoxos-loop-client/
 
 (function(window) {
-  // FIXME: Discuss whether documentation on
-  // http://docs.services.mozilla.com/sync/storageformat5.html
-  // should be updated to mention that this is the string to use:
   const HKDF_INFO_STR = 'identity.mozilla.com/picl/v1/oldsync';
 
   // constructor
@@ -167,10 +163,6 @@
 
   window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
     var cleartext, cleartextStr, keyBundle;
-    // FIXME: I got the value 16 from
-    // https://mxr.mozilla.org/mozilla-central/source/services/crypto/modules/WeaveCrypto.js#455
-    // although I thought we were using a 256-bit AES key, so if the IV length matches the key
-    // length, then I would expect an 8 byte IV. Would be good to understand this better.
     var IV = new Uint8Array(16);
     var enc = {};
 
@@ -182,9 +174,6 @@
     }
 
     // Generate a random IV using the PRNG of the device
-    // FIXME: Is this a good idea? Is it easier to decrypt a ciphertext if the IV is not very
-    // random? I would think the effect is small, I also heard people using an all-zeroes IV
-    // for HKDF, but I need to ask a security guru about this.
     window.crypto.getRandomValues(IV);
     try {
       cleartextStr = JSON.stringify(record);
