@@ -12,14 +12,14 @@ The steps are as follows:
 
 ### Get the kB key from FxA
 
-Use the [onepw protocol](https://github.com/mozilla/fxa-auth-server/wiki/onepw-protocol)) to retrieve a pair of encryption keys (`kA` and `kB`) from the FxA service. Your FxAccountsClient is hopefully able to do this for you. Discard `kA` and hold on to `kB` (it should be a hex string of 64 characters).
+Use the [onepw protocol](https://github.com/mozilla/fxa-auth-server/wiki/onepw-protocol) to retrieve a pair of encryption keys (`kA` and `kB`) from the FxA service. Your FxAccountsClient is hopefully able to do this for you. Discard `kA` and hold on to `kB` (it should be a hex string of 64 characters).
 
 ### Check the storage format
 
 This library currently only supports [storage format 5](http://docs.services.mozilla.com/sync/storageformat5.html), so first retrieve the [metaglobal record](http://docs.services.mozilla.com/sync/storageformat5.html#metaglobal-record) to make sure that the rest of the data on the FxSync account is in the right format. Example using mozilla-services's syncclient:
 
 ```bash
-$ python sync/main.py alexis@notmyidea.org $PASSWORD get_record meta global
+$ python sync/main.py email@example.com $PASSWORD get_record meta global
 {u'id': u'global',
  u'modified': 1437655930.34,
  u'payload': u'{"syncID":"35sY_luKUnYO","storageVersion":5,"declined":["prefs","bookmarks","addons"],"engines":{"clients":{"version":1,"syncID":"VWMk-0KZ8aKh"},"tabs":{"version":1,"syncID":"eGExUapwMq0O"},"forms":{"version":1,"syncID":"Tgd0wt_q7nQO"},"history":{"version":1,"syncID":"vAIUDLBox_g4"},"passwords":{"version":1,"syncID":"vNno7ecPn7P2"}}}'}
@@ -32,7 +32,7 @@ In this example we're good, because the value of `storageVersion` there is 5.
 Similar to how you just retrieved `meta/global`, retrieve `crypto/keys`:
 
 ```bash
-$ python sync/main.py alexis@notmyidea.org $PASSWORD get_record crypto keys
+$ python sync/main.py email@example.com $PASSWORD get_record crypto keys
 {u'id': u'keys',
  u'modified': 1439218393.69,
  u'payload': u'{"ciphertext":"PP5yNUYwJJoLcsL5o85i6RZfvanYDrwtChDD/LdKTZ8JOLubZ9DyRv3HMetSkbhL3HLvVm/FJ1Z4F2Z6IKQCxAc5dNnLsBIUUxhOHLbT0x9/jfnqZ8fLtlbkogI3ZlNvbc8iUF1aX+boe0Pv43vM0VvzxrnJDYzZ2a6jm9nbzUn0ldV9sv6vuvGHE6dANnRkZ3wA/q0q8UvjdwpzXBixAw==","IV":"FmosM+XBNy81/9oEAgI4Uw==","hmac":"01a816e4577c6cf3f97b66b4382d0a3e7e9178c75a3d38ed9ac8ad6397c2ecce"}'}
@@ -84,7 +84,6 @@ Note how you always have to specify the collection name (e.g. 'history' or 'pass
 Arguments: none
 
 ### setKeys(kB, syncKeys)
-TODO: hmac verification of syncKeys is not working yet
 This function is where all the exciting stuff happens. First, kB is stretched using 64-bit HKDF over the string 'identity.mozilla.com/picl/v1/oldsync'. The result is split in two, where the first half becomes the AES key for decrypting cryptoKeysCiphertext (with initialization vector cryptoKeysIV), and the second half becomes the HMAC key for verifying the cryptoKeysHmac signature.
 
 Arguments:
@@ -96,7 +95,6 @@ Arguments:
 Returns a promise that resolves when initialization was successful, and rejects if the CryptoKeys could not be decrypted with the stretched kB, or if WebCrypto is not available.
 
 ### encrypt
-TODO: implement
 Arguments:
 * record: The object to JSON-stringify, sign, and encrypt
 * collectionName: The name of the FxSync collection for which to encrypt (see http://docs.services.mozilla.com/sync/storageformat5.html#encryption).
@@ -104,7 +102,6 @@ Returns:
 A promise for a JSON string encoding an object with fields ciphertext, IV, and hmac, which is the payload to be uploaded to the FxSync server.
 
 ### decrypt
-TODO: hmac verification is not working yet
 This function JSON-parses the payload, checks the HMAC signature, and if that matches, uses AES-CBC to decrypt the ciphertext, given the IV.
 
 Arguments:
@@ -112,4 +109,3 @@ Arguments:
 * collectionName: The name of the FxSync collection for which to decrypt (see http://docs.services.mozilla.com/sync/storageformat5.html#decryption).
 Returns:
 A promise for an object (the record again that was originally JSON-stringified and encrypted on this or on another FxSync client).
-
