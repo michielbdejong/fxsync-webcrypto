@@ -44,7 +44,7 @@ var tests = [
       });
     });
   },
-    
+
   /* 2 */
   function() {
     test('decrypt can verify and decrypt a record', function() {
@@ -53,7 +53,6 @@ var tests = [
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         return fswc.decrypt(fixture.historyEntryEnc.payload, fixture.historyEntryEnc.collectionName);
       }).then(function(decryptedRecord) {
-        console.log(JSON.stringify(decryptedRecord));
         assertEqual(typeof decryptedRecord, 'object');
         assertEqual(decryptedRecord.id, fixture.historyEntryDec.payload.id);
         assertEqual(decryptedRecord.histUri, fixture.historyEntryDec.payload.histUri);
@@ -65,7 +64,7 @@ var tests = [
       });
     });
   },
-    
+
   /* 3 */
   function() {
     test('encrypt can sign and encrypt a record', function() {
@@ -78,8 +77,8 @@ var tests = [
       });
     });
   },
-   
-  /* 4 */ 
+
+  /* 4 */
   function() {
     test('encrypt rejects promise if record is not an object', function() {
       var fixture = window.fxSyncDataExample;
@@ -93,7 +92,7 @@ var tests = [
       });
     });
   },
-    
+
   /* 5 */
   function() {
     test('encrypt rejects promise if record cannot be JSON-stringified', function() {
@@ -110,7 +109,7 @@ var tests = [
       });
     });
   },
-    
+
   /* 6 */
   function() {
     test('encrypt rejects promise if collectionName is not a string', function() {
@@ -125,7 +124,7 @@ var tests = [
       });
     });
   },
-    
+
   /* 7 */
   function() {
     test('decrypt rejects promise if collectionName is not a string', function() {
@@ -140,7 +139,7 @@ var tests = [
       });
     });
   },
-    
+
   /* 8 */
   function() {
     test('decrypt rejects promise if record is not a string', function() {
@@ -155,7 +154,7 @@ var tests = [
       });
     });
   },
-    
+
   /* 9 */
   function() {
     test('decrypt rejects promise if record is not a JSON string', function() {
