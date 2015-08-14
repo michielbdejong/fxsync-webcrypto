@@ -23,7 +23,7 @@ var tests = [
       var fswc = new FxSyncWebCrypto();
       assertEqual(typeof fswc, 'object');
       assertEqual(typeof fswc.setKeys, 'function');
-      assertEqual(typeof fswc.verifyAndDecryptRecord, 'function');
+      assertEqual(typeof fswc.decrypt, 'function');
     });
   },
 
@@ -47,11 +47,11 @@ var tests = [
     
   /* 2 */
   function() {
-    test('verifyAndDecryptRecord can verify and decrypt a record', function() {
+    test('decrypt can verify and decrypt a record', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-        return fswc.verifyAndDecryptRecord(fixture.historyEntryEnc.payload, fixture.historyEntryEnc.collectionName);
+        return fswc.decrypt(fixture.historyEntryEnc.payload, fixture.historyEntryEnc.collectionName);
       }).then(function(decryptedRecord) {
         console.log(JSON.stringify(decryptedRecord));
         assertEqual(typeof decryptedRecord, 'object');
@@ -68,11 +68,11 @@ var tests = [
     
   /* 3 */
   function() {
-    test('signAndEncryptRecord can sign and encrypt a record', function() {
+    test('encrypt can sign and encrypt a record', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-        return fswc.signAndEncryptRecord(fixture.historyEntryDec.payload, fixture.historyEntryDec.collectionName);
+        return fswc.encrypt(fixture.historyEntryDec.payload, fixture.historyEntryDec.collectionName);
       }).then(function(encryptedRecord) {
         assertEqual(encryptedRecord, fixture.historyEntryEnc.payload);
       });
@@ -81,11 +81,11 @@ var tests = [
    
   /* 4 */ 
   function() {
-    test('signAndEncryptRecord rejects promise if record is not an object', function() {
+    test('encrypt rejects promise if record is not an object', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-        return fswc.signAndEncryptRecord('boo', fixture.historyEntryDec.collectionName);
+        return fswc.encrypt('boo', fixture.historyEntryDec.collectionName);
       }).then(function() {
         assertEqual(false, true);
       }, function(err) {
@@ -96,13 +96,13 @@ var tests = [
     
   /* 5 */
   function() {
-    test('signAndEncryptRecord rejects promise if record cannot be JSON-stringified', function() {
+    test('encrypt rejects promise if record cannot be JSON-stringified', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         var myObject = {};
         myObject.cyclicReference = myObject;
-        return fswc.signAndEncryptRecord(myObject, fixture.historyEntryDec.collectionName);
+        return fswc.encrypt(myObject, fixture.historyEntryDec.collectionName);
       }).then(function() {
         assertEqual(false, true);
       }, function(err) {
@@ -113,11 +113,11 @@ var tests = [
     
   /* 6 */
   function() {
-    test('signAndEncryptRecord rejects promise if collectionName is not a string', function() {
+    test('encrypt rejects promise if collectionName is not a string', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-        return fswc.signAndEncryptRecord(fixture.historyEntryDec.payload, 5);
+        return fswc.encrypt(fixture.historyEntryDec.payload, 5);
       }).then(function() {
         assertEqual(false, true);
       }, function(err) {
@@ -128,11 +128,11 @@ var tests = [
     
   /* 7 */
   function() {
-    test('verifyAndDecryptRecord rejects promise if collectionName is not a string', function() {
+    test('decrypt rejects promise if collectionName is not a string', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-        return fswc.verifyAndDecryptRecord(fixture.historyEntryEnc.payload, 5);
+        return fswc.decrypt(fixture.historyEntryEnc.payload, 5);
       }).then(function() {
         assertEqual(false, true);
       }, function(err) {
@@ -143,11 +143,11 @@ var tests = [
     
   /* 8 */
   function() {
-    test('verifyAndDecryptRecord rejects promise if record is not a string', function() {
+    test('decrypt rejects promise if record is not a string', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-        return fswc.verifyAndDecryptRecord(5, fixture.historyEntryEnc.collectionName);
+        return fswc.decrypt(5, fixture.historyEntryEnc.collectionName);
       }).then(function() {
         assertEqual(false, true);
       }, function(err) {
@@ -158,11 +158,11 @@ var tests = [
     
   /* 9 */
   function() {
-    test('verifyAndDecryptRecord rejects promise if record is not a JSON string', function() {
+    test('decrypt rejects promise if record is not a JSON string', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-        return fswc.verifyAndDecryptRecord('boo', fixture.historyEntryEnc.collectionName);
+        return fswc.decrypt('boo', fixture.historyEntryEnc.collectionName);
       }).then(function() {
         assertEqual(false, true);
       }, function(err) {
@@ -173,13 +173,13 @@ var tests = [
 
   /* 10 */
   function() {
-    test('verifyAndDecryptRecord rejects promise if record hmac is wrong', function() {
+    test('decrypt rejects promise if record hmac is wrong', function() {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         var payloadObj = JSON.parse(fixture.historyEntryEnc.payload);
         payloadObj.hmac = 'deadbeef';
-        return fswc.verifyAndDecryptRecord(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
+        return fswc.decrypt(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
       }).then(function() {
         assertEqual(false, true);
       }, function(err) {

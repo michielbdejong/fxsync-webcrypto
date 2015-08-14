@@ -121,7 +121,7 @@
     return this.syncKeys.defaultAsKeyBundle;
   }
 
-  window.FxSyncWebCrypto.prototype.verifyAndDecryptRecord = function(payload, collectionName) {
+  window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
     var record, keyBundle;
     if (typeof payload !== 'string') {
       return Promise.reject('Payload is not a string');
@@ -165,7 +165,7 @@
     });
   }
 
-  window.FxSyncWebCrypto.prototype.signAndEncryptRecord = function(record, collectionName) {
+  window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
     var cleartext, cleartextStr, keyBundle;
     // FIXME: I got the value 16 from
     // https://mxr.mozilla.org/mozilla-central/source/services/crypto/modules/WeaveCrypto.js#455

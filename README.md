@@ -59,15 +59,15 @@ var historyEntry = {
 var fswc = new FxSyncWebCrypto();
 fswc.setKeys(kB, syncKeys).then(function() {
 }).then(function() {
-  return fswc.verifyAndDecryptRecord(historyEntry.payload, historyEntry.collectionName);
+  return fswc.decrypt(historyEntry.payload, historyEntry.collectionName);
 }).then(function(recordObj) {
   console.log('Decrypted history entry', recordObj);
   // Should print this to the console:
   // Decrypted history entry Object { id: "_9sCUbahs0ay", histUri: "https://developer.mozilla.org/en-US…", title: "Object.prototype.__proto__ - JavaSc…", visits: Array[1] }
 
-  return fswc.signAndEncryptRecord({foo: 'bar'}, 'my collection');
+  return fswc.encrypt({foo: 'bar'}, 'my collection');
 }).then(function(payload) {
-  return fswc.verifyAndDecryptRecord(payload, 'my collection');
+  return fswc.decrypt(payload, 'my collection');
 }).then(function(record) {
   console.log('decrypted record', record);
   // Should print this to the console:
@@ -95,7 +95,7 @@ Arguments:
   * hmac - a 64-byte hex string representing the 1024-bit hmac signature for the [CryptoKeys record](http://docs.services.mozilla.com/sync/storageformat5.html#crypto-keys-record) for the FxSync account.
 Returns a promise that resolves when initialization was successful, and rejects if the CryptoKeys could not be decrypted with the stretched kB, or if WebCrypto is not available.
 
-### signAndEncryptRecord
+### encrypt
 TODO: implement
 Arguments:
 * record: The object to JSON-stringify, sign, and encrypt
@@ -103,7 +103,7 @@ Arguments:
 Returns:
 A promise for a JSON string encoding an object with fields ciphertext, IV, and hmac, which is the payload to be uploaded to the FxSync server.
 
-### verifyAndDecryptRecord
+### decrypt
 TODO: hmac verification is not working yet
 This function JSON-parses the payload, checks the HMAC signature, and if that matches, uses AES-CBC to decrypt the ciphertext, given the IV.
 
