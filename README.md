@@ -1,6 +1,14 @@
 # fxsync-webcrypto
 Uses WebCrypto to decrypt data from [Firefox Sync's Global Storage format](http://docs.services.mozilla.com/sync/storageformat5.html).
 
+## Build
+
+The build is a simple concatenation, done by `sh ./build.sh`
+
+## Test
+
+Open testrunner.html in a browser that supports WebCrypto
+
 ## Usage
 You will need three things:
 
