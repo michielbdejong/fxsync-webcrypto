@@ -16,35 +16,45 @@ function test(testName, runTest) {
   runTest();
 }
 
+var tests = [
+  function() {
+    test('Constructor creates an object with the right methods', function() {
+      var fswc = new FxSyncWebCrypto();
+      assertEqual(typeof fswc, 'object');
+      assertEqual(typeof fswc.setKeys, 'function');
+      assertEqual(typeof fswc.verifyAndDecryptRecord, 'function');
+    });
+  },
 
-test('Constructor creates an object with the right methods', function() {
-  var fswc = new FxSyncWebCrypto();
-  assertEqual(typeof fswc, 'object');
-  assertEqual(typeof fswc.setKeys, 'function');
-  assertEqual(typeof fswc.verifyAndDecryptRecord, 'function');
-});
+  function() {
+    test('setKeys populates mainSyncKey and defaultDecryptionKey correctly', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto()
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        assertEqual(typeof fswc.mainSyncKey, 'object');
+        assertEqual(fswc.mainSyncKey.aes instanceof CryptoKey, true);
+        assertEqual(fswc.mainSyncKey.hmac instanceof CryptoKey, true);
+        assertEqual(typeof fswc.syncKeys, 'object');
+        assertEqual(Array.isArray(fswc.syncKeys.default), true);
+        assertEqual(typeof fswc.syncKeys.defaultAsKeyBundle, 'object');
+        assertEqual(fswc.syncKeys.defaultAsKeyBundle instanceof CryptoKey, true);
+        assertEqual(fswc.syncKeys.defaultAsKeyBundle.hmac instanceof CryptoKey, true);
+      });
+    });
+  },
+    
+  function() {
+    test('verifyAndDecryptRecord can verify and decrypt a record', function() {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto()
+      fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        return fswc.verifyAndDecryptRecord(fixture.historyEntry.payload, fixture.historyEntry.collectionName);
+      }).then(function(decryptedRecord) {
+        assertEqual(typeof decryptedRecord, 'object');
+      });
+    });
+  }
+];
 
-test('setKeys populates mainSyncKey and defaultDecryptionKey correctly', function() {
-  var fixture = window.fxSyncDataExample;
-  var fswc = new FxSyncWebCrypto()
-  fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-    assertEqual(typeof fswc.mainSyncKey, 'object');
-    assertEqual(fswc.mainSyncKey.aes instanceof CryptoKey, true);
-    assertEqual(fswc.mainSyncKey.hmac instanceof CryptoKey, true);
-    assertEqual(typeof fswc.syncKeys, 'object');
-    assertEqual(Array.isArray(fswc.syncKeys.default), true);
-    assertEqual(typeof fswc.syncKeys.defaultAsKeyBundle, 'object');
-    assertEqual(fswc.syncKeys.defaultAsKeyBundle instanceof CryptoKey, true);
-    assertEqual(fswc.syncKeys.defaultAsKeyBundle.hmac instanceof CryptoKey, true);
-  });
-});
-
-test('verifyAndDecryptRecord can verify and decrypt a record', function() {
-  var fixture = window.fxSyncDataExample;
-  var fswc = new FxSyncWebCrypto()
-  fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
-    return fswc.verifyAndDecryptRecord(fixture.historyEntry.payload, fixture.historyEntry.collectionName);
-  }).then(function(decryptedRecord) {
-    assertEqual(typeof decryptedRecord, 'object');
-  });
-});
+//...
+window.tests = tests;
