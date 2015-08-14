@@ -39,6 +39,8 @@ describe('FxSyncWebCrypto', function() {
         assertEqual(err, 'SyncKeys hmac could not be verified with current main key');
       });
     });
+    it('rejects promise if syncKeys ciphertext is wrong');
+    it('rejects promise if syncKeys IV is wrong');
   });
 
   describe('decrypt', function() {
@@ -108,6 +110,9 @@ describe('FxSyncWebCrypto', function() {
         assertEqual(err, 'Record verification failed with current hmac key for history');
       });
     });
+
+    it('rejects promise if record ciphertext is wrong');
+    it('rejects promise if record IV is wrong');
   });
 
   describe('encrypt', function() {
