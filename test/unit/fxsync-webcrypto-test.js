@@ -36,11 +36,11 @@ var tests = [
         assertEqual(typeof fswc.mainSyncKey, 'object');
         assertEqual(fswc.mainSyncKey.aes instanceof CryptoKey, true);
         assertEqual(fswc.mainSyncKey.hmac instanceof CryptoKey, true);
-        assertEqual(typeof fswc.syncKeys, 'object');
-        assertEqual(Array.isArray(fswc.syncKeys.default), true);
-        assertEqual(typeof fswc.syncKeys.defaultAsKeyBundle, 'object');
-        assertEqual(fswc.syncKeys.defaultAsKeyBundle instanceof CryptoKey, true);
-        assertEqual(fswc.syncKeys.defaultAsKeyBundle.hmac instanceof CryptoKey, true);
+        assertEqual(typeof fswc.bulkKeyBundle, 'object');
+        assertEqual(Array.isArray(fswc.bulkKeyBundle.default), true);
+        assertEqual(typeof fswc.bulkKeyBundle.defaultAsKeyBundle, 'object');
+        assertEqual(fswc.bulkKeyBundle.defaultAsKeyBundle.aes instanceof CryptoKey, true);
+        assertEqual(fswc.bulkKeyBundle.defaultAsKeyBundle.hmac instanceof CryptoKey, true);
       });
     });
   },

@@ -15,7 +15,7 @@
     }
 
     this.mainSyncKey = null;
-    this.syncKeys = null;
+    this.bulkKeyBundle = null;
   };
 
   function importKeyBundle(aesKeyAB, hmacKeyAB) {
@@ -59,12 +59,12 @@
                           syncKeysCiphertextByteArray).then(function (keyBundleAB) {
       var syncKeysJSON = String.fromCharCode.apply(null, new Uint8Array(keyBundleAB));
       try {
-        this.syncKeys = JSON.parse(syncKeysJSON);
+        this.bulkKeyBundle = JSON.parse(syncKeysJSON);
         return importKeyBundle(
-            base64StringToByteArray(this.syncKeys.default[0]),
-            base64StringToByteArray(this.syncKeys.default[1])
+            base64StringToByteArray(this.bulkKeyBundle.default[0]),
+            base64StringToByteArray(this.bulkKeyBundle.default[1])
         ).then(function(keyBundle) {
-          this.syncKeys.defaultAsKeyBundle = keyBundle;
+          this.bulkKeyBundle.defaultAsKeyBundle = keyBundle;
         }.bind(this));
       } catch(e) {
         return Promise.reject('Deciphered crypto keys, but not JSON');
@@ -118,7 +118,7 @@
   }
 
   window.FxSyncWebCrypto.prototype.selectKeyBundle = function() {
-    return this.syncKeys.defaultAsKeyBundle;
+    return this.bulkKeyBundle.defaultAsKeyBundle;
   }
 
   window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
