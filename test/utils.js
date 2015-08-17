@@ -41,6 +41,32 @@ describe('utils', function() {
       chai.expect(window.FxSyncWebCrypto._stringConversion.hexStringToByteArray.bind(undefined, 'hello')).to.throw(Error);
     });
   });
+  describe('byteArrayToBase64String', function() {
+    it('converts a Uint8Array to a Base64', function() {
+     var ba = window.FxSyncWebCrypto._stringConversion.hexStringToByteArray('01ff');
+     var str = window.FxSyncWebCrypto._stringConversion.byteArrayToBase64String(ba);
+     chai.expect(str).to.be.a('string');
+     chai.expect(str).to.equal('Af8=');
+    });
+    it('throws an error when input is not a Uint8Array', function() {
+      chai.expect(
+           window.FxSyncWebCrypto._stringConversion.byteArrayToBase64String.bind(undefined, new ArrayBuffer(2))).
+           to.throw(Error);
+    });
+  });
+  describe('byteArrayToHexString', function() {
+    it('converts a Uint8Array to a Base64', function() {
+     var ba = window.FxSyncWebCrypto._stringConversion.base64StringToByteArray('Af8=');
+     var str = window.FxSyncWebCrypto._stringConversion.byteArrayToHexString(ba);
+     chai.expect(str).to.be.a('string');
+     chai.expect(str).to.equal('01ff');
+    });
+    it('throws an error when input is not an Uint8Array', function() {
+      chai.expect(
+           window.FxSyncWebCrypto._stringConversion.byteArrayToHexString.bind(undefined, new ArrayBuffer(2))).
+           to.throw(Error);
+    });
+  });
   describe('arrayBufferToBase64String', function() {
     it('converts an ArrayBuffer to a Base64', function() {
      var ba = window.FxSyncWebCrypto._stringConversion.hexStringToByteArray('01ff');

@@ -32,6 +32,9 @@ var StringConversion = {
   },
   
   byteArrayToBase64String: function(bytes) {
+    if (!(bytes instanceof Uint8Array)) {
+      throw new Error('Not a Uint8Array');
+    }
     var binary = '';
     var len = bytes.byteLength;
     for (var i=0; i<len; i++) {
@@ -49,6 +52,9 @@ var StringConversion = {
   },
   
   byteArrayToHexString: function(bytes) {
+    if (!(bytes instanceof Uint8Array)) {
+      throw new Error('Not a Uint8Array');
+    }
     var hex = '';
     for (var i=0; i <bytes.length; ++i) {
       var zeropad = (bytes[i] < 0x10) ? "0" : "";
