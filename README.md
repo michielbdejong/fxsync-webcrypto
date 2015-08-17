@@ -66,7 +66,6 @@ var historyEntry = {
 
 var fswc = new FxSyncWebCrypto();
 fswc.setKeys(kB, cryptoKeys).then(function() {
-}).then(function() {
   return fswc.decrypt(historyEntry.payload, historyEntry.collectionName);
 }).then(function(recordObj) {
   console.log('Decrypted history entry', recordObj);
