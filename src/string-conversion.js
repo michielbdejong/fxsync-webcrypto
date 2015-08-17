@@ -9,14 +9,14 @@ var StringConversion = {
     }
     return byteArray;
   },
-  
+
   base64StringToByteArray: function(base64) {
     if (typeof base64 != 'string' || base64.length % 4 !== 0) {
       throw new Error('Number of base64 digits must be a multiple of 4 to convert to bytes');
     }
     return this.rawStringToByteArray(window.atob(base64));
   },
-  
+
   hexStringToByteArray: function(hexStr) {
     if (typeof hexStr != 'string' || hexStr.length % 2 !== 0) {
       throw new Error('Must have an even number of hex digits to convert to bytes');
@@ -28,7 +28,7 @@ var StringConversion = {
     }
     return byteArray;
   },
-  
+
   byteArrayToBase64String: function(bytes) {
     if (!(bytes instanceof Uint8Array)) {
       throw new Error('Not a Uint8Array');
@@ -40,7 +40,7 @@ var StringConversion = {
     }
     return window.btoa(binary);
   },
-  
+
   arrayBufferToBase64String: function(buffer) {
     if (!(buffer instanceof ArrayBuffer)) {
       throw new Error('Not an ArrayBuffer');
@@ -48,7 +48,7 @@ var StringConversion = {
     var bytes = new Uint8Array(buffer);
     return this.byteArrayToBase64String(bytes);
   },
-  
+
   byteArrayToHexString: function(bytes) {
     if (!(bytes instanceof Uint8Array)) {
       throw new Error('Not a Uint8Array');

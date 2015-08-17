@@ -120,7 +120,7 @@ describe('FxSyncWebCrypto', function() {
       chai.expect(promise).
            to.be.rejectedWith('Record verification failed with current hmac key for history').
            and.notify(done);
-   
+
     });
 
     it('rejects promise if record ciphertext is wrong', function(done) {
