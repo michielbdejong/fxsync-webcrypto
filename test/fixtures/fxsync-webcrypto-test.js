@@ -1,5 +1,10 @@
-// This data is from an FxSync account, freshly created for this purpose,
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// NB: This data is from an FxSync account, freshly created for this purpose,
 // and then synced once using FxDesktop with a fresh empty Firefox profile:
+
 (function(window) {
   function hex2ba(hexStr) {
     var numBytes = hexStr.length / 2;

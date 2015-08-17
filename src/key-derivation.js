@@ -2,6 +2,9 @@
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// NB: This code was copied from the hawk_creds.js file from
+// https://github.com/mozilla-b2g/firefoxos-loop-client
+
 var KeyDerivation = (function() {
   // hash length is 32 because only SHA256 is used at this moment
   var HASH_LENGTH = 32;
