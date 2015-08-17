@@ -199,18 +199,18 @@ window.FxSyncWebCrypto.prototype._importKb = function(kBByteArray) {
 };
 
 window.FxSyncWebCrypto.prototype._verifySyncKeys = function(signedTextByteArray,
-                                                              syncKeysHmacByteArray) {
+                                                              cryptoKeysHmacByteArray) {
   return crypto.subtle.verify({ name: 'HMAC', hash: 'AES-256' }, this.mainSyncKey.hmac,
-                        syncKeysHmacByteArray, signedTextByteArray);
+                        cryptoKeysHmacByteArray, signedTextByteArray);
 };
 
-window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
-                                                              syncKeysCiphertextByteArray) {
-  return crypto.subtle.decrypt({ name: 'AES-CBC', iv: syncKeysIVByteArray }, this.mainSyncKey.aes,
-                        syncKeysCiphertextByteArray).then(function (keyBundleAB) {
-    var syncKeysJSON = String.fromCharCode.apply(null, new Uint8Array(keyBundleAB));
+window.FxSyncWebCrypto.prototype._importSyncKeys = function(cryptoKeysIVByteArray,
+                                                              cryptoKeysCiphertextByteArray) {
+  return crypto.subtle.decrypt({ name: 'AES-CBC', iv: cryptoKeysIVByteArray }, this.mainSyncKey.aes,
+                        cryptoKeysCiphertextByteArray).then(function (keyBundleAB) {
+    var cryptoKeysJSON = String.fromCharCode.apply(null, new Uint8Array(keyBundleAB));
     try {
-      this.bulkKeyBundle = JSON.parse(syncKeysJSON);
+      this.bulkKeyBundle = JSON.parse(cryptoKeysJSON);
       return importKeyBundle(
           StringConversion.base64StringToByteArray(this.bulkKeyBundle.default[0]),
           StringConversion.base64StringToByteArray(this.bulkKeyBundle.default[1])
@@ -226,10 +226,17 @@ window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
 };
 
 /*
- * setKeys
+ * setKeys - import kB and crypto/keys
+ *
+ * @param {String} kB Hex string with kB from FxA onepw protocol
+ * @param {Object} cryptoKeys Object with:
+ *                 - ciphertext {String} A Base64 String containing an AES-CBC ciphertext
+ *                 - IV {String} A Base64 String containing the AES-CBC Initialization Vector
+ *                 - hmac {String} A Hex String containing the HMAC-SHA256 signature
+ * @returns {Promise} A promise that will resolve after import of kB and decryption of cryptoKeys.
  */
-window.FxSyncWebCrypto.prototype.setKeys = function(kB, syncKeys) {
-  var kBByteArray, syncKeysCiphertextByteArray, syncKeysIVByteArray, syncKeysHmacByteArray;
+window.FxSyncWebCrypto.prototype.setKeys = function(kB, cryptoKeys) {
+  var kBByteArray, cryptoKeysCiphertextByteArray, cryptoKeysIVByteArray, cryptoKeysHmacByteArray;
 
   // Input checking
   try {
@@ -238,29 +245,29 @@ window.FxSyncWebCrypto.prototype.setKeys = function(kB, syncKeys) {
     return Promise.reject('Could not parse kB as a hex string');
   }
   try {
-    syncKeysCiphertextByteArray = StringConversion.base64StringToByteArray(syncKeys.ciphertext);
+    cryptoKeysCiphertextByteArray = StringConversion.base64StringToByteArray(cryptoKeys.ciphertext);
   } catch (e) {
-    return Promise.reject('Could not parse syncKeys.ciphertext as a base64 string');
+    return Promise.reject('Could not parse cryptoKeys.ciphertext as a base64 string');
   }
   try {
-    syncKeysIVByteArray = StringConversion.base64StringToByteArray(syncKeys.IV);
+    cryptoKeysIVByteArray = StringConversion.base64StringToByteArray(cryptoKeys.IV);
   } catch (e) {
-    return Promise.reject('Could not parse syncKeys.IV as a base64 string');
+    return Promise.reject('Could not parse cryptoKeys.IV as a base64 string');
   }
   try {
-    syncKeysHmacByteArray = StringConversion.hexStringToByteArray(syncKeys.hmac);
+    cryptoKeysHmacByteArray = StringConversion.hexStringToByteArray(cryptoKeys.hmac);
   } catch (e) {
-    return Promise.reject('Could not parse syncKeys.hmac as a hex string');
+    return Promise.reject('Could not parse cryptoKeys.hmac as a hex string');
   }
 
   return this._importKb(kBByteArray).then(function() {
     // Intentionally using StringConversion.rawStringToByteArray instead of StringConversion.base64StringToByteArray on the ciphertext here -
     // See https://github.com/mozilla/firefox-ios/blob/1cce59c8eac282e151568f1204ffbbcc27349eff/Sync/KeyBundle.swift#L178
-    return this._verifySyncKeys(StringConversion.rawStringToByteArray(syncKeys.ciphertext),
-                                                syncKeysHmacByteArray);
+    return this._verifySyncKeys(StringConversion.rawStringToByteArray(cryptoKeys.ciphertext),
+                                                cryptoKeysHmacByteArray);
   }.bind(this)).then(function(verified) {
     if (verified) {
-      return this._importSyncKeys(syncKeysIVByteArray, syncKeysCiphertextByteArray);
+      return this._importSyncKeys(cryptoKeysIVByteArray, cryptoKeysCiphertextByteArray);
     } else {
       return Promise.reject('SyncKeys hmac could not be verified with current main key');
     }
@@ -271,6 +278,16 @@ window.FxSyncWebCrypto.prototype.selectKeyBundle = function() {
   return this.bulkKeyBundle.defaultAsKeyBundle;
 };
 
+/*
+ * decrypt - verify and decrypt a Weave Basic Object
+ *
+ * @param {Object} payload Object with:
+ *                 - ciphertext {String} A Base64 String containing an AES-CBC ciphertext
+ *                 - IV {String} A Base64 String containing the AES-CBC Initialization Vector
+ *                 - hmac {String} A Hex String containing the HMAC-SHA256 signature
+ * @param {String} collectionName String The name of the Sync collection (currently ignored)
+ * @returns {Promise} A promise for the decrypted Weave Basic Object.
+ */
 window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   var recordEnc, keyBundle;
   if (typeof payload !== 'string') {
@@ -315,6 +332,13 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   });
 };
 
+/*
+ * encrypt - encrypt and sign a record
+ *
+ * @param {Object} record Object The data to be JSON-stringified and stored
+ * @param {String} collectionName String The name of the Sync collection (currently ignored)
+ * @returns {Promise} A promise for the encrypted Weave Basic Object.
+ */
 window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   var cleartext, cleartextStr, keyBundle;
   var IV = new Uint8Array(16);

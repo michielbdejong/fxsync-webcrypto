@@ -17,7 +17,7 @@
       infoStr: hex2ba('6964656e746974792e6d6f7a696c6c612e636f6d2f7069636c2f76312f6f6c6473796e63'),//'identity.mozilla.com/picl/v1/oldsync'
       outputHex: 'd63eb2610f1e5edc21b37fed22b93b0f9ea379840fb5c3c5eb95991b9b3bfab69cbabfda0762bdf0b27431d81960c8cf5dab7d482901213a5a1b003eb0081ed0'
     },
-    syncKeys: {
+    cryptoKeys: {
       ciphertext: 'PP5yNUYwJJoLcsL5o85i6RZfvanYDrwtChDD/LdKTZ8JOLubZ9DyRv3HMetSkbhL3HLvVm/FJ1Z4F2Z6IKQCxAc5dNnLsBIUUxhOHLbT0x9/jfnqZ8fLtlbkogI3ZlNvbc8iUF1aX+boe0Pv43vM0VvzxrnJDYzZ2a6jm9nbzUn0ldV9sv6vuvGHE6dANnRkZ3wA/q0q8UvjdwpzXBixAw==',
       IV: 'FmosM+XBNy81/9oEAgI4Uw==',
       hmac: '01a816e4577c6cf3f97b66b4382d0a3e7e9178c75a3d38ed9ac8ad6397c2ecce'

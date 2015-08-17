@@ -54,7 +54,7 @@ Using `kB` and `cryptoKeys`, you can call the FxSyncWebCrypto constructor:
 
 ````js
 var kB = '85c4f8c1d8e3e2186824c127af786891dd03c6e05b1b45f28f7181211bf2affb';
-var syncKeys = {
+var cryptoKeys = {
   ciphertext: 'PP5yNUYwJJoLcsL5o85i6RZfvanYDrwtChDD/LdKTZ8JOLubZ9DyRv3HMetSkbhL3HLvVm/FJ1Z4F2Z6IKQCxAc5dNnLsBIUUxhOHLbT0x9/jfnqZ8fLtlbkogI3ZlNvbc8iUF1aX+boe0Pv43vM0VvzxrnJDYzZ2a6jm9nbzUn0ldV9sv6vuvGHE6dANnRkZ3wA/q0q8UvjdwpzXBixAw==',
   IV: 'FmosM+XBNy81/9oEAgI4Uw==',
   hmac: '01a816e4577c6cf3f97b66b4382d0a3e7e9178c75a3d38ed9ac8ad6397c2ecce'
@@ -65,7 +65,7 @@ var historyEntry = {
 };
 
 var fswc = new FxSyncWebCrypto();
-fswc.setKeys(kB, syncKeys).then(function() {
+fswc.setKeys(kB, cryptoKeys).then(function() {
 }).then(function() {
   return fswc.decrypt(historyEntry.payload, historyEntry.collectionName);
 }).then(function(recordObj) {
@@ -91,12 +91,12 @@ Note how you always have to specify the collection name (e.g. 'history' or 'pass
 ### constructor FxSyncWebCrypto
 Arguments: none
 
-### setKeys(kB, syncKeys)
+### setKeys(kB, cryptoKeys)
 This function is where all the exciting stuff happens. First, kB is stretched using 64-bit HKDF over the string 'identity.mozilla.com/picl/v1/oldsync'. The result is split in two, where the first half becomes the AES key for decrypting cryptoKeysCiphertext (with initialization vector cryptoKeysIV), and the second half becomes the HMAC key for verifying the cryptoKeysHmac signature.
 
 Arguments:
 * kB - A 64-byte hex string representing the 1024-bit `kB` key described in [onepw](https://github.com/mozilla/fxa-auth-server/wiki/onepw-protocol)
-* syncKeys - an object, containing:
+* cryptoKeys - an object, containing:
   * ciphertext - A Base64 string representing the ciphertext of the [CryptoKeys record](http://docs.services.mozilla.com/sync/storageformat5.html#crypto-keys-record) for the FxSync account.
   * IV - A Base64 string representing the initialization vector for the [CryptoKeys record](http://docs.services.mozilla.com/sync/storageformat5.html#crypto-keys-record) for the FxSync account.
   * hmac - a 64-byte hex string representing the 1024-bit hmac signature for the [CryptoKeys record](http://docs.services.mozilla.com/sync/storageformat5.html#crypto-keys-record) for the FxSync account.
