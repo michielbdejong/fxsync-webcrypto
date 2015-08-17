@@ -285,7 +285,7 @@ window.FxSyncWebCrypto.prototype.selectKeyBundle = function() {
 }
 
 window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
-  var record, keyBundle;
+  var recordEnc, keyBundle;
   if (typeof payload !== 'string') {
     return Promise.reject('Payload is not a string');
   }
