@@ -31,7 +31,7 @@ function importKeyBundle(aesKeyAB, hmacKeyAB) {
 }
 window.FxSyncWebCrypto.prototype._importKb = function(kBByteArray) {
   // The number 64 here comes from (256 bits for AES + 256 bits for HMAC) / (8 bits per byte)
-  return hC.hkdf(kBByteArray, StringConversion.rawStringToByteArray(HKDF_INFO_STR), new Uint8Array(64), 64)
+  return KeyDerivation.hkdf(kBByteArray, StringConversion.rawStringToByteArray(HKDF_INFO_STR), new Uint8Array(64), 64)
   .then(function (output) {
     var aesKeyAB = output.slice(0, 32).buffer;
     var hmacKeyAB = output.slice(32).buffer;
