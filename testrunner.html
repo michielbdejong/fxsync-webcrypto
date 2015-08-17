@@ -22,6 +22,9 @@
     <script src="./test/main.js"></script>
 
     <script>
+      if (!window.FxSyncWebCrypto) {
+        alert('Did you run `sh build.sh` first?');
+      }
       mocha.checkLeaks();
       mocha.globals(['jQuery']);
       mocha.run();
