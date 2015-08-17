@@ -175,39 +175,10 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   });
 };
 
-/*
- * encrypt - encrypt and sign a record
- *
- * @param {Object} record Object The data to be JSON-stringified and stored
- * @param {String} collectionName String The name of the Sync collection (currently ignored)
- * @returns {Promise} A promise for the encrypted Weave Basic Object.
- */
-window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
-  var cleartext, cleartextStr, keyBundle;
-  var IV = new Uint8Array(16);
-  var enc = {};
-
-  if (typeof record !== 'object') {
-    return Promise.reject('Record should be an object');
-  }
-  if (typeof collectionName !== 'string') {
-    return Promise.reject('collectionName is not a string');
-  }
-
+window.FxSyncWebCrypto.prototype._encryptAndSign = function(keyBundle, cleartext) {
   // Generate a random IV using the PRNG of the device
+  var IV = new Uint8Array(16);
   window.crypto.getRandomValues(IV);
-  try {
-    cleartextStr = JSON.stringify(record);
-  } catch(e) {
-    return Promise.reject('Record cannot be JSON-stringified');
-  }
-  cleartext = StringConversion.rawStringToByteArray(cleartextStr);
-  try {
-    keyBundle = this.selectKeyBundle(collectionName);
-  } catch(e) {
-    return Promise.reject('No key bundle found for ' + collectionName + ' - did you call setKeys?');
-  }
-
   return crypto.subtle.encrypt({
     name: 'AES-CBC',
     iv: IV
@@ -224,6 +195,37 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
       });
     });
   });
+};
+
+/*
+ * encrypt - encrypt and sign a record
+ *
+ * @param {Object} record Object The data to be JSON-stringified and stored
+ * @param {String} collectionName String The name of the Sync collection (currently ignored)
+ * @returns {Promise} A promise for the encrypted Weave Basic Object.
+ */
+window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
+  var cleartext, cleartextStr, keyBundle;
+
+  if (typeof record !== 'object') {
+    return Promise.reject('Record should be an object');
+  }
+  if (typeof collectionName !== 'string') {
+    return Promise.reject('collectionName is not a string');
+  }
+
+  try {
+    cleartextStr = JSON.stringify(record);
+  } catch(e) {
+    return Promise.reject('Record cannot be JSON-stringified');
+  }
+  cleartext = StringConversion.rawStringToByteArray(cleartextStr);
+  try {
+    keyBundle = this.selectKeyBundle(collectionName);
+  } catch(e) {
+    return Promise.reject('No key bundle found for ' + collectionName + ' - did you call setKeys?');
+  }
+  return this._encryptAndSign(keyBundle, cleartext);
 };
 
 //expose these for mocha tests:
