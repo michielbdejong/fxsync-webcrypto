@@ -12,9 +12,32 @@ describe('hkdf', function() {
         done();
       });
     });
-    it('rejects its promise if ikm is wrong');
-    it('rejects its promise if info is wrong');
-    it('rejects its promise if salt is wrong');
-    it('rejects its promise if length is wrong');
+    it('rejects its promise if ikm is wrong', function(done) {
+      var fixture = window.fxSyncDataExample.hkdf;
+      fixture.kB = 'foo';
+      var promise = window.FxSyncWebCrypto._keyDerivation.hkdf(fixture.kB, fixture.infoStr, new Uint8Array(64), 64);
+      chai.expect(promise).to.be.rejectedWith(Error).
+           and.notify(done);
+    });
+    it('rejects its promise if info is wrong', function(done) {
+      var fixture = window.fxSyncDataExample.hkdf;
+      fixture.kB = 'foo';
+      var promise = window.FxSyncWebCrypto._keyDerivation.hkdf(fixture.kB, fixture.infoStr, new Uint8Array(64), 64);
+      chai.expect(promise).to.be.rejectedWith(Error).
+           and.notify(done);
+    });
+    it('rejects its promise if salt is wrong', function(done) {
+      var fixture = window.fxSyncDataExample.hkdf;
+      fixture.kB = 'foo';
+      var promise = window.FxSyncWebCrypto._keyDerivation.hkdf(fixture.kB, fixture.infoStr, new Uint8Array(64), 64);
+      chai.expect(promise).to.be.rejectedWith(Error).
+           and.notify(done);
+    });
+    it('rejects its promise if length is wrong', function(done) {
+      var fixture = window.fxSyncDataExample.hkdf;
+      var promise = window.FxSyncWebCrypto._keyDerivation.hkdf(fixture.kB, fixture.infoStr, new Uint8Array(64), 32);
+      chai.expect(promise).to.be.rejectedWith(Error).
+           and.notify(done);
+    });
   });
 });
