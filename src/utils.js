@@ -46,10 +46,3 @@ function arrayBufferToHexString(buffer) {
   }
   return hex;
 }
-
-//...
-window.rawStringToByteArray = rawStringToByteArray;
-window.base64StringToByteArray = base64StringToByteArray;
-window.hexStringToByteArray = hexStringToByteArray;
-window.arrayBufferToBase64String = arrayBufferToBase64String;
-window.arrayBufferToHexString = arrayBufferToHexString;

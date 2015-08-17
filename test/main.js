@@ -1,5 +1,5 @@
 function assertEqual(a, b) {
-  return expect(a).to.equal(b);
+  return chai.expect(a).to.equal(b);
 }
 
 describe('FxSyncWebCrypto', function() {
@@ -122,7 +122,10 @@ describe('FxSyncWebCrypto', function() {
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         return fswc.encrypt(fixture.historyEntryDec.payload, fixture.historyEntryDec.collectionName);
       }).then(function(encryptedRecord) {
-        assertEqual(encryptedRecord, fixture.historyEntryEnc.payload);
+        //see if we can decrypt it again
+        return fswc.decrypt(encryptedRecord, fixture.historyEntryDec.collectionName);
+      }).then(function(redecryptedRecord) {
+        chai.expect(redecryptedRecord).to.deep.equal(fixture.historyEntryDec.payload);
       });
     });
 
