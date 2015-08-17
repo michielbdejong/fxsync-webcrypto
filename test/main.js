@@ -151,7 +151,7 @@ describe('FxSyncWebCrypto', function() {
   });
 
   describe('encrypt', function() {
-    it('can sign and encrypt a record', function() {
+    it('can sign and encrypt a record', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
@@ -161,19 +161,21 @@ describe('FxSyncWebCrypto', function() {
         return fswc.decrypt(encryptedRecord, fixture.historyEntryDec.collectionName);
       }).then(function(redecryptedRecord) {
         chai.expect(redecryptedRecord).to.deep.equal(fixture.historyEntryDec.payload);
+        done();
       });
     });
 
-    it('rejects promise if record is not an object', function() {
+    it('rejects promise if record is not an object', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         return fswc.encrypt('boo', fixture.historyEntryDec.collectionName);
       });
-      chai.expect(promise).to.be.rejectedWith('Record should be an object');
+      chai.expect(promise).to.be.rejectedWith('Record should be an object').
+          and.notify(done);
     });
 
-    it('rejects promise if record cannot be JSON-stringified', function() {
+    it('rejects promise if record cannot be JSON-stringified', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
@@ -181,16 +183,18 @@ describe('FxSyncWebCrypto', function() {
         myObject.cyclicReference = myObject;
         return fswc.encrypt(myObject, fixture.historyEntryDec.collectionName);
       });
-      chai.expect(promise).to.be.rejectedWith('Record cannot be JSON-stringified');
+      chai.expect(promise).to.be.rejectedWith('Record cannot be JSON-stringified').
+          and.notify(done);
     });
 
-    it('rejects promise if collectionName is not a string', function() {
+    it('rejects promise if collectionName is not a string', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         return fswc.encrypt(fixture.historyEntryDec.payload, 5);
       });
-      chai.expect(promise).to.be.rejectedWith('collectionName is not a string');
+      chai.expect(promise).to.be.rejectedWith('collectionName is not a string').
+           and.notify(done);
     });
   });
 });

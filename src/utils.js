@@ -30,12 +30,8 @@ var StringConversion = {
     return byteArray;
   },
   
-  arrayBufferToBase64String: function(buffer) {
-    if (!(buffer instanceof ArrayBuffer)) {
-      throw new Error('Not an ArrayBuffer');
-    }
+  byteArrayToBase64String: function(bytes) {
     var binary = '';
-    var bytes = new Uint8Array(buffer);
     var len = bytes.byteLength;
     for (var i=0; i<len; i++) {
         binary += String.fromCharCode(bytes[i]);
@@ -43,17 +39,30 @@ var StringConversion = {
     return window.btoa(binary);
   },
   
+  arrayBufferToBase64String: function(buffer) {
+    if (!(buffer instanceof ArrayBuffer)) {
+      console.log('oops', buffer);
+      throw new Error('Not an ArrayBuffer');
+    }
+    var bytes = new Uint8Array(buffer);
+    return this.byteArrayToBase64String(bytes);
+  },
+  
+  byteArrayToHexString: function(bytes) {
+    var hex = '';
+    for (var i=0; i <bytes.length; ++i) {
+      var zeropad = (bytes[i] < 0x10) ? "0" : "";
+      hex += zeropad + bytes[i].toString(16);
+    }
+    return hex;
+  },
+
   arrayBufferToHexString: function(buffer) {
     if (!(buffer instanceof ArrayBuffer)) {
       throw new Error('Not an ArrayBuffer');
     }
-    var hexChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-    var hex = '';
     var bytes = new Uint8Array(buffer);
-    var len = bytes.byteLength;
-    for (var i=0; i<len; i++) {
-      hex += hexChars[Math.floor(bytes[i]/16)] + hexChars[bytes[i]%16];
-    }
-    return hex;
+    return this.byteArrayToHexString(bytes);
   }
+
 };

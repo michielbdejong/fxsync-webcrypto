@@ -6,7 +6,6 @@
 var HASH_LENGTH = 32;
 
 var hC = {
-  bin2hex: null,
   str2bin: null,
   hex2bin: null,
   concatBin: null,
@@ -36,13 +35,13 @@ hC.hkdf = function(ikm, info, salt, length) {
     // checks if there are still more rounds left and fires the next
     // Or just finishes the process calling the callback.
     function addToOutput(digest) {
-      var output = prevOutput + hC.bin2hex(digest);
+      var output = prevOutput + StringConversion.byteArrayToHexString(digest);
 
       if (++roundNumber <= numBlocks) {
         return doHKDFRound(roundNumber, digest, output, hkdfKey);
       } else {
         return new Promise(function(resolve, reject) {
-          var truncated = hC.bitSlice(hC.hex2bin(output), 0, length * 8);
+          var truncated = hC.bitSlice(StringConversion.hexStringToByteArray(output), 0, length * 8);
           resolve(truncated);
         });
       }
@@ -67,29 +66,6 @@ hC.concatBin = function concatU8Array(buffer1, buffer2) {
   aux.set(new Uint8Array(buffer1), 0);
   aux.set(new Uint8Array(buffer2), buffer1.byteLength);
   return aux;
-};
-
-// Convert an ArrayBufferView to a hex string
-hC.bin2hex = function abv2hex(abv) {
-  var b = new Uint8Array(abv.buffer, abv.byteOffset, abv.byteLength);
-  var hex = "";
-  for (var i=0; i <b.length; ++i) {
-    var zeropad = (b[i] < 0x10) ? "0" : "";
-    hex += zeropad + b[i].toString(16);
-  }
-  return hex;
-};
-
-// Convert a hex string to an ArrayBufferView
-hC.hex2bin = function hex2abv(hex) {
-  if (hex.length % 2 !== 0) {
-    hex = "0" + hex;
-  }
-  var abv = new Uint8Array(hex.length / 2);
-  for (var i=0; i<abv.length; ++i) {
-    abv[i] = parseInt(hex.substr(2*i, 2), 16);
-  }
-  return abv;
 };
 
 var tEncoder = new TextEncoder('utf8');

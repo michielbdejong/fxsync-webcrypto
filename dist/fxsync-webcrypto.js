@@ -31,12 +31,8 @@ var StringConversion = {
     return byteArray;
   },
   
-  arrayBufferToBase64String: function(buffer) {
-    if (!(buffer instanceof ArrayBuffer)) {
-      throw new Error('Not an ArrayBuffer');
-    }
+  byteArrayToBase64String: function(bytes) {
     var binary = '';
-    var bytes = new Uint8Array(buffer);
     var len = bytes.byteLength;
     for (var i=0; i<len; i++) {
         binary += String.fromCharCode(bytes[i]);
@@ -44,19 +40,32 @@ var StringConversion = {
     return window.btoa(binary);
   },
   
+  arrayBufferToBase64String: function(buffer) {
+    if (!(buffer instanceof ArrayBuffer)) {
+      console.log('oops', buffer);
+      throw new Error('Not an ArrayBuffer');
+    }
+    var bytes = new Uint8Array(buffer);
+    return this.byteArrayToBase64String(bytes);
+  },
+  
+  byteArrayToHexString: function(bytes) {
+    var hex = '';
+    for (var i=0; i <bytes.length; ++i) {
+      var zeropad = (bytes[i] < 0x10) ? "0" : "";
+      hex += zeropad + bytes[i].toString(16);
+    }
+    return hex;
+  },
+
   arrayBufferToHexString: function(buffer) {
     if (!(buffer instanceof ArrayBuffer)) {
       throw new Error('Not an ArrayBuffer');
     }
-    var hexChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-    var hex = '';
     var bytes = new Uint8Array(buffer);
-    var len = bytes.byteLength;
-    for (var i=0; i<len; i++) {
-      hex += hexChars[Math.floor(bytes[i]/16)] + hexChars[bytes[i]%16];
-    }
-    return hex;
+    return this.byteArrayToHexString(bytes);
   }
+
 };
 /* This Source Code Form is subject to the terms of the Mozilla Public
 * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -66,7 +75,6 @@ var StringConversion = {
 var HASH_LENGTH = 32;
 
 var hC = {
-  bin2hex: null,
   str2bin: null,
   hex2bin: null,
   concatBin: null,
@@ -96,13 +104,13 @@ hC.hkdf = function(ikm, info, salt, length) {
     // checks if there are still more rounds left and fires the next
     // Or just finishes the process calling the callback.
     function addToOutput(digest) {
-      var output = prevOutput + hC.bin2hex(digest);
+      var output = prevOutput + StringConversion.byteArrayToHexString(digest);
 
       if (++roundNumber <= numBlocks) {
         return doHKDFRound(roundNumber, digest, output, hkdfKey);
       } else {
         return new Promise(function(resolve, reject) {
-          var truncated = hC.bitSlice(hC.hex2bin(output), 0, length * 8);
+          var truncated = hC.bitSlice(StringConversion.hexStringToByteArray(output), 0, length * 8);
           resolve(truncated);
         });
       }
@@ -127,29 +135,6 @@ hC.concatBin = function concatU8Array(buffer1, buffer2) {
   aux.set(new Uint8Array(buffer1), 0);
   aux.set(new Uint8Array(buffer2), buffer1.byteLength);
   return aux;
-};
-
-// Convert an ArrayBufferView to a hex string
-hC.bin2hex = function abv2hex(abv) {
-  var b = new Uint8Array(abv.buffer, abv.byteOffset, abv.byteLength);
-  var hex = "";
-  for (var i=0; i <b.length; ++i) {
-    var zeropad = (b[i] < 0x10) ? "0" : "";
-    hex += zeropad + b[i].toString(16);
-  }
-  return hex;
-};
-
-// Convert a hex string to an ArrayBufferView
-hC.hex2bin = function hex2abv(hex) {
-  if (hex.length % 2 !== 0) {
-    hex = "0" + hex;
-  }
-  var abv = new Uint8Array(hex.length / 2);
-  for (var i=0; i<abv.length; ++i) {
-    abv[i] = parseInt(hex.substr(2*i, 2), 16);
-  }
-  return abv;
 };
 
 var tEncoder = new TextEncoder('utf8');
@@ -364,20 +349,21 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   } catch(e) {
     return Promise.reject('No key bundle found for ' + collectionName + ' - did you call setKeys?');
   }
-  window.keyBundle = keyBundle;window.cleartext = cleartext;window.IV = IV;
+
   return crypto.subtle.encrypt({
     name: 'AES-CBC',
     iv: IV
-  }, keyBundle.aes, cleartext).then(function (ciphertext) {
+  }, keyBundle.aes, cleartext).then(ciphertext => {
     var ciphertextB64 = StringConversion.arrayBufferToBase64String(ciphertext);
     return crypto.subtle.sign({ name: 'HMAC', hash: 'SHA-256' },
                        keyBundle.hmac,
                        StringConversion.rawStringToByteArray(ciphertextB64)
-                      ).then(function(hmac) {
+                      ).then(hmac => {
+    console.log('encrypt ciphertext, hmac, IV', ciphertext, hmac, IV);
       return JSON.stringify({
         hmac: StringConversion.arrayBufferToHexString(hmac),
         ciphertext: ciphertextB64,
-        IV: StringConversion.arrayBufferToBase64String(IV)
+        IV: StringConversion.byteArrayToBase64String(IV)
       });
     });
   });

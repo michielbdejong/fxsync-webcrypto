@@ -184,20 +184,21 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   } catch(e) {
     return Promise.reject('No key bundle found for ' + collectionName + ' - did you call setKeys?');
   }
-  window.keyBundle = keyBundle;window.cleartext = cleartext;window.IV = IV;
+
   return crypto.subtle.encrypt({
     name: 'AES-CBC',
     iv: IV
-  }, keyBundle.aes, cleartext).then(function (ciphertext) {
+  }, keyBundle.aes, cleartext).then(ciphertext => {
     var ciphertextB64 = StringConversion.arrayBufferToBase64String(ciphertext);
     return crypto.subtle.sign({ name: 'HMAC', hash: 'SHA-256' },
                        keyBundle.hmac,
                        StringConversion.rawStringToByteArray(ciphertextB64)
-                      ).then(function(hmac) {
+                      ).then(hmac => {
+    console.log('encrypt ciphertext, hmac, IV', ciphertext, hmac, IV);
       return JSON.stringify({
         hmac: StringConversion.arrayBufferToHexString(hmac),
         ciphertext: ciphertextB64,
-        IV: StringConversion.arrayBufferToBase64String(IV)
+        IV: StringConversion.byteArrayToBase64String(IV)
       });
     });
   });
