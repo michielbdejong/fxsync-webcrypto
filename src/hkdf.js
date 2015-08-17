@@ -2,28 +2,20 @@
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var PREFIX_NAME = 'identity.mozilla.com/picl/v1/';
 // hash length is 32 because only SHA256 is used at this moment
 var HASH_LENGTH = 32;
 
-// Methods that will be available on the hawkCredential promise
-// when it's resolved. What 'bin' means depends if it's using
-// webcrypto or sjcl
 var hC = {
-  emptyKey: null,
   bin2hex: null,
   str2bin: null,
-  bin2base64: null,
   hex2bin: null,
   concatBin: null,
   hkdf: null,
-  derive: null,
   doHMAC: null,
   bitSlice: null,
   newEmptyArray: null,
   doImportKey: null
 };
-
 
 /**
  * hkdf - The HMAC-based Key Derivation Function
@@ -69,11 +61,6 @@ hC.hkdf = function(ikm, info, salt, length) {
 };
 
 var subtle = window.crypto.subtle;
-
-// This should be equivalent to:
-// var emptyKey = new Uint8Array(0);
-// According to FIPS-198-1, Section 4, step 3. Sadly it isn't.
-hC.emptyKey = new Uint8Array(HASH_LENGTH);
 
 hC.concatBin = function concatU8Array(buffer1, buffer2) {
   var aux = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
@@ -131,5 +118,3 @@ hC.bitSlice = (arr, start, end) =>
                        arr.subarray(start / 8));
 
 hC.newEmptyArray = () => new Uint8Array(0);
-
-hC.bin2base64 = u8 => window.btoa(String.fromCharCode.apply(null, u8));
