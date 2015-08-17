@@ -12,7 +12,7 @@ describe('FxSyncWebCrypto', function() {
   describe('setKeys', function() {
     it('populates mainSyncKey and defaultDecryptionKey correctly', function(done) {
       var fixture = window.fxSyncDataExample;
-      var fswc = new FxSyncWebCrypto()
+      var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         chai.expect(fswc.mainSyncKey).to.be.an('object');
         chai.expect(fswc.mainSyncKey.aes).to.be.instanceof(CryptoKey);

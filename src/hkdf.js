@@ -48,7 +48,7 @@ var KeyDerivation = (function() {
         hC.concatBin(prevDigest, info),
         StringConversion.rawStringToByteArray(String.fromCharCode(roundNumber)));
       return hC.doHMAC(input, hkdfKey).then(addToOutput);
-    };
+    }
   
     return hC.doImportKey(salt). // Imports the initial key
       then(hC.doHMAC.bind(undefined, ikm)). // Generates the key deriving key

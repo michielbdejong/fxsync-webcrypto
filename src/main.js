@@ -45,7 +45,7 @@ window.FxSyncWebCrypto.prototype._verifySyncKeys = function(signedTextByteArray,
                                                               syncKeysHmacByteArray) {
   return crypto.subtle.verify({ name: 'HMAC', hash: 'AES-256' }, this.mainSyncKey.hmac,
                         syncKeysHmacByteArray, signedTextByteArray);
-}
+};
 
 window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
                                                               syncKeysCiphertextByteArray) {
@@ -66,7 +66,7 @@ window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
   }.bind(this), function(err) {
     return Promise.reject('Could not decrypt crypto keys using AES part of stretched kB key');
   });
-}
+};
 
 /*
  * setKeys
@@ -108,11 +108,11 @@ window.FxSyncWebCrypto.prototype.setKeys = function(kB, syncKeys) {
       return Promise.reject('SyncKeys hmac could not be verified with current main key');
     }
   }.bind(this));
-}
+};
 
 window.FxSyncWebCrypto.prototype.selectKeyBundle = function() {
   return this.bulkKeyBundle.defaultAsKeyBundle;
-}
+};
 
 window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   var recordEnc, keyBundle;
@@ -156,7 +156,7 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
       return Promise.reject('Could not decrypt record using AES part of key bundle for collection ' + collectionName);
     });
   });
-}
+};
 
 window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   var cleartext, cleartextStr, keyBundle;
@@ -200,7 +200,7 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
       });
     });
   });
-}
+};
 
 //expose these for mocha tests:
 window.FxSyncWebCrypto._stringConversion = StringConversion;

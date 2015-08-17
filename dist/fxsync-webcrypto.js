@@ -4,9 +4,8 @@ var StringConversion = {
     if (typeof str != 'string') {
       throw new Error('Not a string');
     }
-    var strLen = str.length;
     var byteArray = new Uint8Array(strLen);
-    for (var i = 0, strLen; i < strLen; i++) {
+    for (var i = 0; i < str.length; i++) {
       byteArray[i] = str.charCodeAt(i);
     }
     return byteArray;
@@ -122,7 +121,7 @@ var KeyDerivation = (function() {
         hC.concatBin(prevDigest, info),
         StringConversion.rawStringToByteArray(String.fromCharCode(roundNumber)));
       return hC.doHMAC(input, hkdfKey).then(addToOutput);
-    };
+    }
   
     return hC.doImportKey(salt). // Imports the initial key
       then(hC.doHMAC.bind(undefined, ikm)). // Generates the key deriving key
@@ -213,7 +212,7 @@ window.FxSyncWebCrypto.prototype._verifySyncKeys = function(signedTextByteArray,
                                                               syncKeysHmacByteArray) {
   return crypto.subtle.verify({ name: 'HMAC', hash: 'AES-256' }, this.mainSyncKey.hmac,
                         syncKeysHmacByteArray, signedTextByteArray);
-}
+};
 
 window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
                                                               syncKeysCiphertextByteArray) {
@@ -234,7 +233,7 @@ window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
   }.bind(this), function(err) {
     return Promise.reject('Could not decrypt crypto keys using AES part of stretched kB key');
   });
-}
+};
 
 /*
  * setKeys
@@ -276,11 +275,11 @@ window.FxSyncWebCrypto.prototype.setKeys = function(kB, syncKeys) {
       return Promise.reject('SyncKeys hmac could not be verified with current main key');
     }
   }.bind(this));
-}
+};
 
 window.FxSyncWebCrypto.prototype.selectKeyBundle = function() {
   return this.bulkKeyBundle.defaultAsKeyBundle;
-}
+};
 
 window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   var recordEnc, keyBundle;
@@ -324,7 +323,7 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
       return Promise.reject('Could not decrypt record using AES part of key bundle for collection ' + collectionName);
     });
   });
-}
+};
 
 window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   var cleartext, cleartextStr, keyBundle;
@@ -368,7 +367,7 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
       });
     });
   });
-}
+};
 
 //expose these for mocha tests:
 window.FxSyncWebCrypto._stringConversion = StringConversion;

@@ -3,9 +3,8 @@ var StringConversion = {
     if (typeof str != 'string') {
       throw new Error('Not a string');
     }
-    var strLen = str.length;
     var byteArray = new Uint8Array(strLen);
-    for (var i = 0, strLen; i < strLen; i++) {
+    for (var i = 0; i < str.length; i++) {
       byteArray[i] = str.charCodeAt(i);
     }
     return byteArray;
