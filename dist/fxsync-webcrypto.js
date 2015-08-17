@@ -80,7 +80,6 @@ var StringConversion = {
 var HASH_LENGTH = 32;
 
 var hC = {
-  str2bin: null,
   hex2bin: null,
   concatBin: null,
   hkdf: null,
@@ -122,7 +121,7 @@ hC.hkdf = function(ikm, info, salt, length) {
     }
     var input = hC.concatBin(
       hC.concatBin(prevDigest, info),
-      hC.str2bin(String.fromCharCode(roundNumber)));
+      StringConversion.rawStringToByteArray(String.fromCharCode(roundNumber)));
     return hC.doHMAC(input, hkdfKey).then(addToOutput);
   };
 
@@ -142,8 +141,6 @@ hC.concatBin = function concatU8Array(buffer1, buffer2) {
   return aux;
 };
 
-var tEncoder = new TextEncoder('utf8');
-hC.str2bin = tEncoder.encode.bind(tEncoder);
 
 var alg = {
   name: "HMAC",
@@ -161,7 +158,7 @@ hC.doHMAC = (tbsData, hmacKey) =>
   subtle.sign(alg.name, hmacKey, tbsData).then(arrayBuffer2Uint8);
 
 hC.doMAC = (tbhData) =>
-  subtle.digest(alg.hash, hC.str2bin(tbhData)).then(arrayBuffer2Uint8);
+  subtle.digest(alg.hash, StringConversion.rawStringToByteArray(tbhData)).then(arrayBuffer2Uint8);
 
 hC.bitSlice = (arr, start, end) =>
   (end !== undefined ? arr.subarray(start / 8, end / 8) :
