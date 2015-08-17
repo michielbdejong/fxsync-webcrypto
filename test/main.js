@@ -10,7 +10,7 @@ describe('FxSyncWebCrypto', function() {
   });
 
   describe('setKeys', function() {
-    it('populates mainSyncKey and defaultDecryptionKey correctly', function() {
+    it('populates mainSyncKey and defaultDecryptionKey correctly', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto()
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
@@ -22,26 +22,46 @@ describe('FxSyncWebCrypto', function() {
         chai.expect(fswc.bulkKeyBundle.defaultAsKeyBundle).to.be.an('object');
         chai.expect(fswc.bulkKeyBundle.defaultAsKeyBundle.aes).to.be.instanceof(CryptoKey);
         chai.expect(fswc.bulkKeyBundle.defaultAsKeyBundle.hmac).to.be.instanceof(CryptoKey);
+        done();
       });
     });
 
-    it('rejects promise if syncKeys hmac is wrong', function() {
+    it('rejects promise if syncKeys hmac is wrong', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var syncKeysWrong = JSON.parse(JSON.stringify(fixture.syncKeys));
       syncKeysWrong.hmac = 'deadbeef';
-      fswc.setKeys(fixture.kB, syncKeysWrong).then(function() {
-        chai.expect(false).to.equal(true);
-      }, function(err) {
-        chai.expect(err).to.equal('SyncKeys hmac could not be verified with current main key');
-      });
+      var promise = fswc.setKeys(fixture.kB, syncKeysWrong);
+      chai.expect(promise).
+           to.be.rejectedWith('SyncKeys hmac could not be verified with current main key').
+           and.notify(done);
     });
-    it('rejects promise if syncKeys ciphertext is wrong');
-    it('rejects promise if syncKeys IV is wrong');
+
+    it('rejects promise if syncKeys ciphertext is wrong', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      var syncKeysWrong = JSON.parse(JSON.stringify(fixture.syncKeys));
+      syncKeysWrong.ciphertext = 'deadbeef';
+      var promise = fswc.setKeys(fixture.kB, syncKeysWrong);
+      chai.expect(promise).
+           to.be.rejectedWith('SyncKeys hmac could not be verified with current main key').
+           and.notify(done);
+    });
+
+    it('rejects promise if syncKeys IV is wrong', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      var syncKeysWrong = JSON.parse(JSON.stringify(fixture.syncKeys));
+      syncKeysWrong.IV = 'deadbeef';
+      var promise = fswc.setKeys(fixture.kB, syncKeysWrong);
+      chai.expect(promise).
+          to.be.rejectedWith('Could not decrypt crypto keys using AES part of stretched kB key').
+          and.notify(done);
+    });
   });
 
   describe('decrypt', function() {
-    it('can verify and decrypt a record', function() {
+    it('can verify and decrypt a record', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
@@ -55,37 +75,41 @@ describe('FxSyncWebCrypto', function() {
         chai.expect(decryptedRecord.visits.length).to.equal(1);
         chai.expect(decryptedRecord.visits[0].date).to.equal(fixture.historyEntryDec.payload.visits[0].date);
         chai.expect(decryptedRecord.visits[0].type).to.equal(fixture.historyEntryDec.payload.visits[0].type);
+        done();
       });
     });
 
-    it('rejects promise if collectionName is not a string', function() {
+    it('rejects promise if collectionName is not a string', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         return fswc.decrypt(fixture.historyEntryEnc.payload, 5);
       });
-      chai.expect(promise).to.be.rejectedWith('collectionName is not a string');
+      chai.expect(promise).to.be.rejectedWith('collectionName is not a string').
+           and.notify(done);
     });
 
-    it('rejects promise if record is not a string', function() {
+    it('rejects promise if record is not a string', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         return fswc.decrypt(5, fixture.historyEntryEnc.collectionName);
       });
-      chai.expect(promise).to.be.rejectedWith('Payload is not a string');
+      chai.expect(promise).to.be.rejectedWith('Payload is not a string').
+           and.notify(done);
     });
 
-    it('rejects promise if record is not a JSON string', function() {
+    it('rejects promise if record is not a JSON string', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
         return fswc.decrypt('boo', fixture.historyEntryEnc.collectionName);
       });
-      chai.expect(promise).to.be.rejectedWith('Payload is not a JSON string');
+      chai.expect(promise).to.be.rejectedWith('Payload is not a JSON string').
+           and.notify(done);
     });
 
-    it('rejects promise if record hmac is wrong', function() {
+    it('rejects promise if record hmac is wrong', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
@@ -93,11 +117,37 @@ describe('FxSyncWebCrypto', function() {
         payloadObj.hmac = 'deadbeef';
         return fswc.decrypt(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
       });
-      chai.expect(promise).to.be.rejectedWith('Record verification failed with current hmac key for history');
+      chai.expect(promise).
+           to.be.rejectedWith('Record verification failed with current hmac key for history').
+           and.notify(done);
+   
     });
 
-    it('rejects promise if record ciphertext is wrong');
-    it('rejects promise if record IV is wrong');
+    it('rejects promise if record ciphertext is wrong', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        var payloadObj = JSON.parse(fixture.historyEntryEnc.payload);
+        payloadObj.ciphertext = 'deadbeef';
+        return fswc.decrypt(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
+      });
+      chai.expect(promise).
+           to.be.rejectedWith('Record verification failed with current hmac key for history').
+           and.notify(done);
+    });
+
+    it('rejects promise if record IV is wrong', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var fswc = new FxSyncWebCrypto();
+      var promise = fswc.setKeys(fixture.kB, fixture.syncKeys).then(function() {
+        var payloadObj = JSON.parse(fixture.historyEntryEnc.payload);
+        payloadObj.IV = 'deadbeef';
+        return fswc.decrypt(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
+      });
+      chai.expect(promise).
+          to.be.rejectedWith('Could not decrypt record using AES part of key bundle for collection history').
+          and.notify(done);
+    });
   });
 
   describe('encrypt', function() {
