@@ -41,7 +41,6 @@ var StringConversion = {
   
   arrayBufferToBase64String: function(buffer) {
     if (!(buffer instanceof ArrayBuffer)) {
-      console.log('oops', buffer);
       throw new Error('Not an ArrayBuffer');
     }
     var bytes = new Uint8Array(buffer);

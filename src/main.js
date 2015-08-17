@@ -83,7 +83,6 @@ window.FxSyncWebCrypto.prototype.setKeys = function(kB, syncKeys) {
   try {
     syncKeysCiphertextByteArray = StringConversion.base64StringToByteArray(syncKeys.ciphertext);
   } catch (e) {
-    console.log(syncKeys, e);
     return Promise.reject('Could not parse syncKeys.ciphertext as a base64 string');
   }
   try {
@@ -194,7 +193,6 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
                        keyBundle.hmac,
                        StringConversion.rawStringToByteArray(ciphertextB64)
                       ).then(hmac => {
-    console.log('encrypt ciphertext, hmac, IV', ciphertext, hmac, IV);
       return JSON.stringify({
         hmac: StringConversion.arrayBufferToHexString(hmac),
         ciphertext: ciphertextB64,
