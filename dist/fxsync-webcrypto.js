@@ -100,7 +100,6 @@ var KeyDerivation = (function() {
    * @return promise object- It will resolve with `output` data
    */
   hC.hkdf = function(ikm, info, salt, length) {
-  
     var numBlocks = Math.ceil(length / HASH_LENGTH);
   
     function doHKDFRound(roundNumber, prevDigest, prevOutput, hkdfKey) {
@@ -373,4 +372,5 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
 
 //expose these for mocha tests:
 window.FxSyncWebCrypto._stringConversion = StringConversion;
+window.FxSyncWebCrypto._keyDerivation = KeyDerivation;
 })(window);

@@ -204,3 +204,4 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
 
 //expose these for mocha tests:
 window.FxSyncWebCrypto._stringConversion = StringConversion;
+window.FxSyncWebCrypto._keyDerivation = KeyDerivation;
