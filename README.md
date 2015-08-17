@@ -86,6 +86,8 @@ fswc.setKeys(kB, cryptoKeys).then(function() {
 
 Note how you always have to specify the collection name (e.g. 'history' or 'passwords'), so that FxSyncWebCrypto can make sure it uses the right collection key bundle. This is because the CryptoKeys object potentially contains a different key bundle for each collection.
 
+See also [How It Works](https://github.com/michielbdejong/fxsync-webcrypto/blob/master/doc/how-it-works.md) and [links from etherpad](https://github.com/michielbdejong/fxsync-webcrypto/blob/master/doc/links-from-etherpad.txt) in the doc/ folder of this repo, for more background information.
+
 ## Functions provided
 ### constructor FxSyncWebCrypto
 Arguments: none
