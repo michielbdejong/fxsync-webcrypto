@@ -31,7 +31,7 @@ function importKeyBundle(aesKeyAB, hmacKeyAB) {
 }
 window.FxSyncWebCrypto.prototype._importKb = function(kBByteArray) {
   // The number 64 here comes from (256 bits for AES + 256 bits for HMAC) / (8 bits per byte)
-  return hC.hkdf(kBByteArray, rawStringToByteArray(HKDF_INFO_STR), new Uint8Array(64), 64)
+  return hC.hkdf(kBByteArray, StringConversion.rawStringToByteArray(HKDF_INFO_STR), new Uint8Array(64), 64)
   .then(function (output) {
     var aesKeyAB = output.slice(0, 32).buffer;
     var hmacKeyAB = output.slice(32).buffer;
@@ -55,8 +55,8 @@ window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
     try {
       this.bulkKeyBundle = JSON.parse(syncKeysJSON);
       return importKeyBundle(
-          base64StringToByteArray(this.bulkKeyBundle.default[0]),
-          base64StringToByteArray(this.bulkKeyBundle.default[1])
+          StringConversion.base64StringToByteArray(this.bulkKeyBundle.default[0]),
+          StringConversion.base64StringToByteArray(this.bulkKeyBundle.default[1])
       ).then(function(keyBundle) {
         this.bulkKeyBundle.defaultAsKeyBundle = keyBundle;
       }.bind(this));
@@ -76,31 +76,31 @@ window.FxSyncWebCrypto.prototype.setKeys = function(kB, syncKeys) {
 
   // Input checking
   try {
-    kBByteArray = hexStringToByteArray(kB);
+    kBByteArray = StringConversion.hexStringToByteArray(kB);
   } catch (e) {
     return Promise.reject('Could not parse kB as a hex string');
   }
   try {
-    syncKeysCiphertextByteArray = base64StringToByteArray(syncKeys.ciphertext);
+    syncKeysCiphertextByteArray = StringConversion.base64StringToByteArray(syncKeys.ciphertext);
   } catch (e) {
     console.log(syncKeys, e);
     return Promise.reject('Could not parse syncKeys.ciphertext as a base64 string');
   }
   try {
-    syncKeysIVByteArray = base64StringToByteArray(syncKeys.IV);
+    syncKeysIVByteArray = StringConversion.base64StringToByteArray(syncKeys.IV);
   } catch (e) {
     return Promise.reject('Could not parse syncKeys.IV as a base64 string');
   }
   try {
-    syncKeysHmacByteArray = hexStringToByteArray(syncKeys.hmac);
+    syncKeysHmacByteArray = StringConversion.hexStringToByteArray(syncKeys.hmac);
   } catch (e) {
     return Promise.reject('Could not parse syncKeys.hmac as a hex string');
   }
 
   return this._importKb(kBByteArray).then(function() {
-    // Intentionally using rawStringToByteArray instead of base64StringToByteArray on the ciphertext here -
+    // Intentionally using StringConversion.rawStringToByteArray instead of StringConversion.base64StringToByteArray on the ciphertext here -
     // See https://github.com/mozilla/firefox-ios/blob/1cce59c8eac282e151568f1204ffbbcc27349eff/Sync/KeyBundle.swift#L178
-    return this._verifySyncKeys(rawStringToByteArray(syncKeys.ciphertext),
+    return this._verifySyncKeys(StringConversion.rawStringToByteArray(syncKeys.ciphertext),
                                                 syncKeysHmacByteArray);
   }.bind(this)).then(function(verified) {
     if (verified) {
@@ -134,8 +134,8 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
     return Promise.reject('No key bundle found for ' + collectionName + ' - did you call setKeys?');
   }
   return crypto.subtle.verify({ name: 'HMAC', hash: 'SHA-256' },
-                              keyBundle.hmac, hexStringToByteArray(recordEnc.hmac),
-                              rawStringToByteArray(recordEnc.ciphertext)
+                              keyBundle.hmac, StringConversion.hexStringToByteArray(recordEnc.hmac),
+                              StringConversion.rawStringToByteArray(recordEnc.ciphertext)
                              ).then(function (result) {
     if (!result) {
       return Promise.reject('Record verification failed with current hmac key for ' + collectionName);
@@ -143,8 +143,8 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   }).then(function() {
     return crypto.subtle.decrypt({
       name: 'AES-CBC',
-      iv: base64StringToByteArray(recordEnc.IV)
-    }, keyBundle.aes, base64StringToByteArray(recordEnc.ciphertext)).then(function (recordArrayBuffer) {
+      iv: StringConversion.base64StringToByteArray(recordEnc.IV)
+    }, keyBundle.aes, StringConversion.base64StringToByteArray(recordEnc.ciphertext)).then(function (recordArrayBuffer) {
       var recordObj;
       var recordJSON = String.fromCharCode.apply(null, new Uint8Array(recordArrayBuffer));
       try {
@@ -178,7 +178,7 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   } catch(e) {
     return Promise.reject('Record cannot be JSON-stringified');
   }
-  cleartext = rawStringToByteArray(cleartextStr);
+  cleartext = StringConversion.rawStringToByteArray(cleartextStr);
   try {
     keyBundle = this.selectKeyBundle(collectionName);
   } catch(e) {
@@ -189,16 +189,19 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
     name: 'AES-CBC',
     iv: IV
   }, keyBundle.aes, cleartext).then(function (ciphertext) {
-    var ciphertextB64 = arrayBufferToBase64String(ciphertext);
+    var ciphertextB64 = StringConversion.arrayBufferToBase64String(ciphertext);
     return crypto.subtle.sign({ name: 'HMAC', hash: 'SHA-256' },
                        keyBundle.hmac,
-                       rawStringToByteArray(ciphertextB64)
+                       StringConversion.rawStringToByteArray(ciphertextB64)
                       ).then(function(hmac) {
       return JSON.stringify({
-        hmac: arrayBufferToHexString(hmac),
+        hmac: StringConversion.arrayBufferToHexString(hmac),
         ciphertext: ciphertextB64,
-        IV: arrayBufferToBase64String(IV)
+        IV: StringConversion.arrayBufferToBase64String(IV)
       });
     });
   });
 }
+
+//expose these for mocha tests:
+window.FxSyncWebCrypto._stringConversion = StringConversion;

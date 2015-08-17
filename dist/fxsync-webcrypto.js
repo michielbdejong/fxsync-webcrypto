@@ -1,52 +1,63 @@
 (function(window) {
-function rawStringToByteArray(str) {
-  var strLen = str.length;
-  var byteArray = new Uint8Array(strLen);
-  for (var i = 0, strLen; i < strLen; i++) {
-    byteArray[i] = str.charCodeAt(i);
+var StringConversion = {
+  rawStringToByteArray: function(str) {
+    if (typeof str != 'string') {
+      throw new Error('Not a string');
+    }
+    var strLen = str.length;
+    var byteArray = new Uint8Array(strLen);
+    for (var i = 0, strLen; i < strLen; i++) {
+      byteArray[i] = str.charCodeAt(i);
+    }
+    return byteArray;
+  },
+  
+  base64StringToByteArray: function(base64) {
+    if (typeof base64 != 'string' || base64.length % 4 !== 0) {
+      throw new Error('Number of base64 digits must be a multiple of 4 to convert to bytes');
+    }
+    return this.rawStringToByteArray(window.atob(base64));
+  },
+  
+  hexStringToByteArray: function(hexStr) {
+    if (typeof hexStr != 'string' || hexStr.length % 2 !== 0) {
+      throw new Error('Must have an even number of hex digits to convert to bytes');
+    }
+    var numBytes = hexStr.length / 2;
+    var byteArray = new Uint8Array(numBytes);
+    for (var i = 0; i < numBytes; i++) {
+      byteArray[i] = parseInt(hexStr.substr(i * 2, 2), 16); //FIXME: Can this be done faster?
+    }
+    return byteArray;
+  },
+  
+  arrayBufferToBase64String: function(buffer) {
+    if (!(buffer instanceof ArrayBuffer)) {
+      throw new Error('Not an ArrayBuffer');
+    }
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i=0; i<len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  },
+  
+  arrayBufferToHexString: function(buffer) {
+    if (!(buffer instanceof ArrayBuffer)) {
+      throw new Error('Not an ArrayBuffer');
+    }
+    var hexChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+    var hex = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i=0; i<len; i++) {
+      hex += hexChars[Math.floor(bytes[i]/16)] + hexChars[bytes[i]%16];
+    }
+    return hex;
   }
-  return byteArray;
-}
-
-function base64StringToByteArray(base64) {
-  if (typeof base64 != 'string' || base64.length % 4 !== 0) {
-    throw Error('Number of base64 digits must be a multiple of 4 to convert to bytes');
-  }
-  return rawStringToByteArray(window.atob(base64));
-}
-
-function hexStringToByteArray(hexStr) {
-  if (typeof hexStr != 'string' || hexStr.length % 2 !== 0) {
-    throw Error('Must have an even number of hex digits to convert to bytes');
-  }
-  var numBytes = hexStr.length / 2;
-  var byteArray = new Uint8Array(numBytes);
-  for (var i = 0; i < numBytes; i++) {
-    byteArray[i] = parseInt(hexStr.substr(i * 2, 2), 16); //FIXME: Can this be done faster?
-  }
-  return byteArray;
-}
-
-function arrayBufferToBase64String(buffer) {
-  var binary = '';
-  var bytes = new Uint8Array(buffer);
-  var len = bytes.byteLength;
-  for (var i=0; i<len; i++) {
-      binary += String.fromCharCode(bytes[i]);
-  }
-  return window.btoa(binary);
-}
-
-function arrayBufferToHexString(buffer) {
-  var hexChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-  var hex = '';
-  var bytes = new Uint8Array(buffer);
-  var len = bytes.byteLength;
-  for (var i=0; i<len; i++) {
-    hex += hexChars[Math.floor(bytes[i]/16)] + hexChars[bytes[i]%16];
-  }
-  return hex;
-}
+};
 /* This Source Code Form is subject to the terms of the Mozilla Public
 * License, v. 2.0. If a copy of the MPL was not distributed with this
 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -200,7 +211,7 @@ function importKeyBundle(aesKeyAB, hmacKeyAB) {
 }
 window.FxSyncWebCrypto.prototype._importKb = function(kBByteArray) {
   // The number 64 here comes from (256 bits for AES + 256 bits for HMAC) / (8 bits per byte)
-  return hC.hkdf(kBByteArray, rawStringToByteArray(HKDF_INFO_STR), new Uint8Array(64), 64)
+  return hC.hkdf(kBByteArray, StringConversion.rawStringToByteArray(HKDF_INFO_STR), new Uint8Array(64), 64)
   .then(function (output) {
     var aesKeyAB = output.slice(0, 32).buffer;
     var hmacKeyAB = output.slice(32).buffer;
@@ -224,8 +235,8 @@ window.FxSyncWebCrypto.prototype._importSyncKeys = function(syncKeysIVByteArray,
     try {
       this.bulkKeyBundle = JSON.parse(syncKeysJSON);
       return importKeyBundle(
-          base64StringToByteArray(this.bulkKeyBundle.default[0]),
-          base64StringToByteArray(this.bulkKeyBundle.default[1])
+          StringConversion.base64StringToByteArray(this.bulkKeyBundle.default[0]),
+          StringConversion.base64StringToByteArray(this.bulkKeyBundle.default[1])
       ).then(function(keyBundle) {
         this.bulkKeyBundle.defaultAsKeyBundle = keyBundle;
       }.bind(this));
@@ -245,31 +256,31 @@ window.FxSyncWebCrypto.prototype.setKeys = function(kB, syncKeys) {
 
   // Input checking
   try {
-    kBByteArray = hexStringToByteArray(kB);
+    kBByteArray = StringConversion.hexStringToByteArray(kB);
   } catch (e) {
     return Promise.reject('Could not parse kB as a hex string');
   }
   try {
-    syncKeysCiphertextByteArray = base64StringToByteArray(syncKeys.ciphertext);
+    syncKeysCiphertextByteArray = StringConversion.base64StringToByteArray(syncKeys.ciphertext);
   } catch (e) {
     console.log(syncKeys, e);
     return Promise.reject('Could not parse syncKeys.ciphertext as a base64 string');
   }
   try {
-    syncKeysIVByteArray = base64StringToByteArray(syncKeys.IV);
+    syncKeysIVByteArray = StringConversion.base64StringToByteArray(syncKeys.IV);
   } catch (e) {
     return Promise.reject('Could not parse syncKeys.IV as a base64 string');
   }
   try {
-    syncKeysHmacByteArray = hexStringToByteArray(syncKeys.hmac);
+    syncKeysHmacByteArray = StringConversion.hexStringToByteArray(syncKeys.hmac);
   } catch (e) {
     return Promise.reject('Could not parse syncKeys.hmac as a hex string');
   }
 
   return this._importKb(kBByteArray).then(function() {
-    // Intentionally using rawStringToByteArray instead of base64StringToByteArray on the ciphertext here -
+    // Intentionally using StringConversion.rawStringToByteArray instead of StringConversion.base64StringToByteArray on the ciphertext here -
     // See https://github.com/mozilla/firefox-ios/blob/1cce59c8eac282e151568f1204ffbbcc27349eff/Sync/KeyBundle.swift#L178
-    return this._verifySyncKeys(rawStringToByteArray(syncKeys.ciphertext),
+    return this._verifySyncKeys(StringConversion.rawStringToByteArray(syncKeys.ciphertext),
                                                 syncKeysHmacByteArray);
   }.bind(this)).then(function(verified) {
     if (verified) {
@@ -303,8 +314,8 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
     return Promise.reject('No key bundle found for ' + collectionName + ' - did you call setKeys?');
   }
   return crypto.subtle.verify({ name: 'HMAC', hash: 'SHA-256' },
-                              keyBundle.hmac, hexStringToByteArray(recordEnc.hmac),
-                              rawStringToByteArray(recordEnc.ciphertext)
+                              keyBundle.hmac, StringConversion.hexStringToByteArray(recordEnc.hmac),
+                              StringConversion.rawStringToByteArray(recordEnc.ciphertext)
                              ).then(function (result) {
     if (!result) {
       return Promise.reject('Record verification failed with current hmac key for ' + collectionName);
@@ -312,8 +323,8 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   }).then(function() {
     return crypto.subtle.decrypt({
       name: 'AES-CBC',
-      iv: base64StringToByteArray(recordEnc.IV)
-    }, keyBundle.aes, base64StringToByteArray(recordEnc.ciphertext)).then(function (recordArrayBuffer) {
+      iv: StringConversion.base64StringToByteArray(recordEnc.IV)
+    }, keyBundle.aes, StringConversion.base64StringToByteArray(recordEnc.ciphertext)).then(function (recordArrayBuffer) {
       var recordObj;
       var recordJSON = String.fromCharCode.apply(null, new Uint8Array(recordArrayBuffer));
       try {
@@ -347,7 +358,7 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   } catch(e) {
     return Promise.reject('Record cannot be JSON-stringified');
   }
-  cleartext = rawStringToByteArray(cleartextStr);
+  cleartext = StringConversion.rawStringToByteArray(cleartextStr);
   try {
     keyBundle = this.selectKeyBundle(collectionName);
   } catch(e) {
@@ -358,17 +369,20 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
     name: 'AES-CBC',
     iv: IV
   }, keyBundle.aes, cleartext).then(function (ciphertext) {
-    var ciphertextB64 = arrayBufferToBase64String(ciphertext);
+    var ciphertextB64 = StringConversion.arrayBufferToBase64String(ciphertext);
     return crypto.subtle.sign({ name: 'HMAC', hash: 'SHA-256' },
                        keyBundle.hmac,
-                       rawStringToByteArray(ciphertextB64)
+                       StringConversion.rawStringToByteArray(ciphertextB64)
                       ).then(function(hmac) {
       return JSON.stringify({
-        hmac: arrayBufferToHexString(hmac),
+        hmac: StringConversion.arrayBufferToHexString(hmac),
         ciphertext: ciphertextB64,
-        IV: arrayBufferToBase64String(IV)
+        IV: StringConversion.arrayBufferToBase64String(IV)
       });
     });
   });
 }
+
+//expose these for mocha tests:
+window.FxSyncWebCrypto._stringConversion = StringConversion;
 })(window);
