@@ -1,5 +1,5 @@
 jshint src/ test/
 mkdir -p dist/
-echo "(function(window) {" > dist/fxsync-webcrypto.js
-cat src/string-conversion.js src/key-derivation.js src/main.js >> dist/fxsync-webcrypto.js
-echo "})(window);" >> dist/fxsync-webcrypto.js
+echo "(function(window) {" > dist/fxsyncwebcrypto.js
+cat src/stringconversion.js src/keyderivation.js src/main.js >> dist/fxsyncwebcrypto.js
+echo "})(window);" >> dist/fxsyncwebcrypto.js
