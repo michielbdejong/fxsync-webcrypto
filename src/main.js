@@ -7,9 +7,9 @@
 const HKDF_INFO_STR = 'identity.mozilla.com/picl/v1/oldsync';
 
 // constructor
-window.FxSyncWebCrypto = function() {
+var FxSyncWebCrypto = function() {
   // Basic check for presence of WebCrypto
-  if (!window || !window.crypto || !window.crypto.subtle) {
+  if (!exports || !exports.crypto || !exports.crypto.subtle) {
     throw new Error('This environment does not support WebCrypto');
   }
 
@@ -18,11 +18,11 @@ window.FxSyncWebCrypto = function() {
 };
 
 function importKeyBundle(aesKeyAB, hmacKeyAB) {
-  var pAes = window.crypto.subtle.importKey('raw', aesKeyAB,
+  var pAes = exports.crypto.subtle.importKey('raw', aesKeyAB,
                                         { name: 'AES-CBC', length: 256 },
                                         true, [ 'encrypt', 'decrypt' ]
                                   );
-  var pHmac =  window.crypto.subtle.importKey('raw', hmacKeyAB,
+  var pHmac =  exports.crypto.subtle.importKey('raw', hmacKeyAB,
                                         { name: 'HMAC', hash: 'SHA-256' },
                                         true, [ 'sign', 'verify' ]
                                     );
@@ -33,7 +33,7 @@ function importKeyBundle(aesKeyAB, hmacKeyAB) {
     };
   });
 }
-window.FxSyncWebCrypto.prototype._importKb = function(kBByteArray) {
+FxSyncWebCrypto.prototype._importKb = function(kBByteArray) {
   // The number 64 here comes from (256 bits for AES + 256 bits for HMAC) / (8 bits per byte)
   return KeyDerivation.hkdf(kBByteArray, StringConversion.rawStringToByteArray(HKDF_INFO_STR), new Uint8Array(64), 64)
   .then(function (output) {
@@ -45,13 +45,13 @@ window.FxSyncWebCrypto.prototype._importKb = function(kBByteArray) {
   }.bind(this));
 };
 
-window.FxSyncWebCrypto.prototype._verifySyncKeys = function(signedTextByteArray,
+FxSyncWebCrypto.prototype._verifySyncKeys = function(signedTextByteArray,
                                                               cryptoKeysHmacByteArray) {
   return crypto.subtle.verify({ name: 'HMAC', hash: 'AES-256' }, this.mainSyncKey.hmac,
                         cryptoKeysHmacByteArray, signedTextByteArray);
 };
 
-window.FxSyncWebCrypto.prototype._importSyncKeys = function(cryptoKeysIVByteArray,
+FxSyncWebCrypto.prototype._importSyncKeys = function(cryptoKeysIVByteArray,
                                                               cryptoKeysCiphertextByteArray) {
   return crypto.subtle.decrypt({ name: 'AES-CBC', iv: cryptoKeysIVByteArray }, this.mainSyncKey.aes,
                         cryptoKeysCiphertextByteArray).then(function (keyBundleAB) {
@@ -82,7 +82,7 @@ window.FxSyncWebCrypto.prototype._importSyncKeys = function(cryptoKeysIVByteArra
  *                 - hmac {String} A Hex String containing the HMAC-SHA256 signature
  * @returns {Promise} A promise that will resolve after import of kB and decryption of cryptoKeys.
  */
-window.FxSyncWebCrypto.prototype.setKeys = function(kB, cryptoKeys) {
+FxSyncWebCrypto.prototype.setKeys = function(kB, cryptoKeys) {
   var kBByteArray, cryptoKeysCiphertextByteArray, cryptoKeysIVByteArray, cryptoKeysHmacByteArray;
 
   // Input checking
@@ -121,7 +121,7 @@ window.FxSyncWebCrypto.prototype.setKeys = function(kB, cryptoKeys) {
   }.bind(this));
 };
 
-window.FxSyncWebCrypto.prototype.selectKeyBundle = function() {
+FxSyncWebCrypto.prototype.selectKeyBundle = function() {
   return this.bulkKeyBundle.defaultAsKeyBundle;
 };
 
@@ -135,7 +135,7 @@ window.FxSyncWebCrypto.prototype.selectKeyBundle = function() {
  * @param {String} collectionName String The name of the Sync collection (currently ignored)
  * @returns {Promise} A promise for the decrypted Weave Basic Object.
  */
-window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
+FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   var recordEnc, keyBundle;
   if (typeof payload !== 'string') {
     return Promise.reject('Payload is not a string');
@@ -179,10 +179,10 @@ window.FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
   });
 };
 
-window.FxSyncWebCrypto.prototype._encryptAndSign = function(keyBundle, cleartext) {
+FxSyncWebCrypto.prototype._encryptAndSign = function(keyBundle, cleartext) {
   // Generate a random IV using the PRNG of the device
   var IV = new Uint8Array(16);
-  window.crypto.getRandomValues(IV);
+  exports.crypto.getRandomValues(IV);
   return crypto.subtle.encrypt({
     name: 'AES-CBC',
     iv: IV
@@ -208,7 +208,7 @@ window.FxSyncWebCrypto.prototype._encryptAndSign = function(keyBundle, cleartext
  * @param {String} collectionName String The name of the Sync collection (currently ignored)
  * @returns {Promise} A promise for the encrypted Weave Basic Object.
  */
-window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
+FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   var cleartext, cleartextStr, keyBundle;
 
   if (typeof record !== 'object') {
@@ -231,7 +231,3 @@ window.FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   }
   return this._encryptAndSign(keyBundle, cleartext);
 };
-
-//expose these for mocha tests:
-window.FxSyncWebCrypto._stringConversion = StringConversion;
-window.FxSyncWebCrypto._keyDerivation = KeyDerivation;
