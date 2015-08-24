@@ -31,6 +31,7 @@ describe('FxSyncWebCrypto', function() {
     });
 
     it('rejects promise if cryptoKeys hmac is wrong', function(done) {
+      this.slow(200);
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var cryptoKeysWrong = JSON.parse(JSON.stringify(fixture.cryptoKeys));
@@ -93,33 +94,137 @@ describe('FxSyncWebCrypto', function() {
            and.notify(done);
     });
 
-    it('rejects promise if record is not a string', function(done) {
+    it('rejects promise if payload is not an object', function(done) {
       var fixture = window.fxSyncDataExample;
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
         return fswc.decrypt(5, fixture.historyEntryEnc.collectionName);
       });
-      chai.expect(promise).to.be.rejectedWith('Payload is not a string').
+      chai.expect(promise).to.be.rejectedWith('Payload is not an object').
            and.notify(done);
     });
 
-    it('rejects promise if record is not a JSON string', function(done) {
+    it('rejects promise if payload.ciphertext is not a string', function(done) {
       var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: 5,
+        IV: fixture.historyEntryEnc.payload.IV,
+        hmac: fixture.historyEntryEnc.payload.hmac
+      };
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
-        return fswc.decrypt('boo', fixture.historyEntryEnc.collectionName);
+        return fswc.decrypt(payload,
+            fixture.historyEntryEnc.collectionName);
       });
-      chai.expect(promise).to.be.rejectedWith('Payload is not a JSON string').
+      chai.expect(promise).to.be.rejectedWith('payload.ciphertext is not ' +
+               'a Base64 string').
+           and.notify(done);
+    });
+
+    it('rejects promise if payload.ciphertext is not a Base64 string', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: 'foo',
+        IV: fixture.historyEntryEnc.payload.IV,
+        hmac: fixture.historyEntryEnc.payload.hmac
+      };
+      var fswc = new FxSyncWebCrypto();
+      var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
+        return fswc.decrypt(payload,
+            fixture.historyEntryEnc.collectionName);
+      });
+      chai.expect(promise).to.be.rejectedWith('payload.ciphertext is not ' +
+               'a Base64 string').
+           and.notify(done);
+    });
+
+    it('rejects promise if payload.IV is not a string', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: fixture.historyEntryEnc.payload.ciphertext,
+        IV: null,
+        hmac: fixture.historyEntryEnc.payload.hmac
+      };
+      var fswc = new FxSyncWebCrypto();
+      var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
+        return fswc.decrypt(payload, fixture.historyEntryEnc.collectionName);
+      });
+      chai.expect(promise).to.be.rejectedWith('payload.IV is not ' +
+               'a Base64 string').
+           and.notify(done);
+    });
+
+    it('rejects promise if payload.IV is not a Base64 string', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: fixture.historyEntryEnc.payload.ciphertext,
+        IV: 'foo',
+        hmac: fixture.historyEntryEnc.payload.hmac
+      };
+      var fswc = new FxSyncWebCrypto();
+      var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
+        return fswc.decrypt(payload, fixture.historyEntryEnc.collectionName);
+      });
+      chai.expect(promise).to.be.rejectedWith('payload.IV is not ' +
+               'a Base64 string').
+           and.notify(done);
+    });
+
+    it('rejects promise if payload.hmac is not a string', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: fixture.historyEntryEnc.payload.ciphertext,
+        IV: fixture.historyEntryEnc.payload.IV,
+        hmac: { foo: 'bar' }
+      };
+      var fswc = new FxSyncWebCrypto();
+      var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
+        return fswc.decrypt(payload, fixture.historyEntryEnc.collectionName);
+      });
+      chai.expect(promise).to.be.rejectedWith('payload.hmac is not a string').
+           and.notify(done);
+    });
+
+    it('rejects promise if payload.hmac is not a hex string (1)', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: fixture.historyEntryEnc.payload.ciphertext,
+        IV: fixture.historyEntryEnc.payload.IV,
+        hmac: 'fee' // should detect odd number of chars
+      };
+      var fswc = new FxSyncWebCrypto();
+      var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
+        return fswc.decrypt(payload, fixture.historyEntryEnc.collectionName);
+      });
+      chai.expect(promise).to.be.rejectedWith('payload.hmac.length not a multiple of 2').
+           and.notify(done);
+    });
+
+    it('rejects promise if payload.hmac is not a hex string (2)', function(done) {
+      var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: fixture.historyEntryEnc.payload.ciphertext,
+        IV: fixture.historyEntryEnc.payload.IV,
+        hmac: 'fooz' // should detect verification failure due to non-hex string
+      };
+      var fswc = new FxSyncWebCrypto();
+      var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
+        return fswc.decrypt(payload, fixture.historyEntryEnc.collectionName);
+      });
+      chai.expect(promise).to.be.rejectedWith('payload.hmac contains non-hex characters').
            and.notify(done);
     });
 
     it('rejects promise if record hmac is wrong', function(done) {
       var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: fixture.historyEntryEnc.payload.ciphertext,
+        IV: fixture.historyEntryEnc.payload.IV,
+        hmac: 'deadbeef'
+      };
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
-        var payloadObj = JSON.parse(fixture.historyEntryEnc.payload);
-        payloadObj.hmac = 'deadbeef';
-        return fswc.decrypt(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
+        return fswc.decrypt(payload, fixture.historyEntryEnc.collectionName);
       });
       chai.expect(promise).
            to.be.rejectedWith('Record verification failed with current hmac key for history').
@@ -129,11 +234,14 @@ describe('FxSyncWebCrypto', function() {
 
     it('rejects promise if record ciphertext is wrong', function(done) {
       var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: 'deadbeef',
+        IV: fixture.historyEntryEnc.payload.IV,
+        hmac: fixture.historyEntryEnc.payload.hmac
+      };
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
-        var payloadObj = JSON.parse(fixture.historyEntryEnc.payload);
-        payloadObj.ciphertext = 'deadbeef';
-        return fswc.decrypt(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
+        return fswc.decrypt(payload, fixture.historyEntryEnc.collectionName);
       });
       chai.expect(promise).
            to.be.rejectedWith('Record verification failed with current hmac key for history').
@@ -142,11 +250,14 @@ describe('FxSyncWebCrypto', function() {
 
     it('rejects promise if record IV is wrong', function(done) {
       var fixture = window.fxSyncDataExample;
+      var payload = {
+        ciphertext: fixture.historyEntryEnc.payload.ciphertext,
+        IV: 'deadbeef',
+        hmac: fixture.historyEntryEnc.payload.hmac
+      };
       var fswc = new FxSyncWebCrypto();
       var promise = fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
-        var payloadObj = JSON.parse(fixture.historyEntryEnc.payload);
-        payloadObj.IV = 'deadbeef';
-        return fswc.decrypt(JSON.stringify(payloadObj), fixture.historyEntryEnc.collectionName);
+        return fswc.decrypt(payload, fixture.historyEntryEnc.collectionName);
       });
       chai.expect(promise).
           to.be.rejectedWith('Could not decrypt record using AES part of key bundle for collection history').
@@ -161,7 +272,8 @@ describe('FxSyncWebCrypto', function() {
       fswc.setKeys(fixture.kB, fixture.cryptoKeys).then(function() {
         return fswc.encrypt(fixture.historyEntryDec.payload, fixture.historyEntryDec.collectionName);
       }).then(function(encryptedRecord) {
-        //see if we can decrypt it again
+        // We cannot predict how the payload will be JSON-stringified into a cleartext,
+        // so instead, see if we can at least decrypt it again
         return fswc.decrypt(encryptedRecord, fixture.historyEntryDec.collectionName);
       }).then(function(redecryptedRecord) {
         chai.expect(redecryptedRecord).to.deep.equal(fixture.historyEntryDec.payload);

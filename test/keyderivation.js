@@ -5,6 +5,7 @@
 describe('hkdf', function() {
   describe('hkdf', function() {
     it('can calculate a hkdf result correctly', function(done) {
+      this.slow(500);
       var fixture = window.fxSyncDataExample.hkdf;
       window.FxSyncWebCrypto._keyDerivation.hkdf(fixture.kB, fixture.infoStr, new Uint8Array(64), 64).then(function(bytes) {
         var hex = '';

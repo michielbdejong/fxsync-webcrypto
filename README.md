@@ -62,7 +62,11 @@ var cryptoKeys = {
   hmac: '01a816e4577c6cf3f97b66b4382d0a3e7e9178c75a3d38ed9ac8ad6397c2ecce'
 };
 var historyEntry = {
-  payload: '{"ciphertext":"o/VpkqMj1tlT8t2youwsS2FgvQeonoHxqjGsRTu1+4swfyBq/QsnKfgOOMmDIXZiPC3hOCNUlf/NtQiEe55hzJZEKLBshaLfXotai6KrprwrmykfiXnwn73n+nYNs8BXL5awDHoaJToyFgF4PYokl7mwN7YC2xFiPgwO7Z2u/8r5RfnPV9MoafqvlvUkW+Tqs+QHeHS/iuSA0P2h/j5ynt9v4xDWLVfEMce0KOKHQ5Qj7BmEPAieWP1trkkDmTdVi2euWrs+fuG4C6PgY4A2j2DbNLVIloqpDVkqM2fgh0YOM9L2NC/uiKEb1Ynr2Fos","IV":"kXL3hb11ltD+Jl0YFk+PlQ==","hmac":"cb727efe7a3f0307921cecbd1a97c03f06a4d75c42026089494d84fcf92dbff9"}',
+  payload: {
+    ciphertext: 'o/VpkqMj1tlT8t2youwsS2FgvQeonoHxqjGsRTu1+4swfyBq/QsnKfgOOMmDIXZiPC3hOCNUlf/NtQiEe55hzJZEKLBshaLfXotai6KrprwrmykfiXnwn73n+nYNs8BXL5awDHoaJToyFgF4PYokl7mwN7YC2xFiPgwO7Z2u/8r5RfnPV9MoafqvlvUkW+Tqs+QHeHS/iuSA0P2h/j5ynt9v4xDWLVfEMce0KOKHQ5Qj7BmEPAieWP1trkkDmTdVi2euWrs+fuG4C6PgY4A2j2DbNLVIloqpDVkqM2fgh0YOM9L2NC/uiKEb1Ynr2Fos',
+    IV: 'kXL3hb11ltD+Jl0YFk+PlQ==',
+    hmac: 'cb727efe7a3f0307921cecbd1a97c03f06a4d75c42026089494d84fcf92dbff9'
+  },
   collectionName: 'history'
 };
 
@@ -75,12 +79,17 @@ fswc.setKeys(kB, cryptoKeys).then(function() {
   // Decrypted history entry Object { id: "_9sCUbahs0ay", histUri: "https://developer.mozilla.org/en-US…", title: "Object.prototype.__proto__ - JavaSc…", visits: Array[1] }
 
   return fswc.encrypt({foo: 'bar'}, 'my collection');
-}).then(function(payload) {
-  return fswc.decrypt(payload, 'my collection');
-}).then(function(record) {
-  console.log('decrypted record', record);
+}).then(function(fooBarEncrypted) {
+  console.log('Encrypted', {foo: 'bar'}, fooBarEncrypted);
   // Should print this to the console:
-  // decrypted record Object { foo: "bar" }
+  // Encrypted Object { foo: "bar" } Object { hmac: "fc38ab05c809928fd602427c034db1acb81…", ciphertext: "QVqNZPUFyYxxGpfRaD5Tqg==", IV: "o82jk3gzy7ELxck9uTCLmg==" }
+  return fswc.decrypt(fooBarEncrypted, 'my collection');
+}).then(function(decryptedBack) {
+  console.log('Decrypted back:', decryptedBack);
+  // Should print this to the console:
+  // Decrypted back: { foo: "bar" }
+}).then(function() {
+  console.log('Done');
 }, function(err) {
   console.log('error', err);
 });
@@ -110,13 +119,13 @@ Arguments:
 * record: The object to JSON-stringify, sign, and encrypt
 * collectionName: The name of the FxSync collection for which to encrypt (see http://docs.services.mozilla.com/sync/storageformat5.html#encryption).
 Returns:
-A promise for a JSON string encoding an object with fields ciphertext, IV, and hmac, which is the payload to be uploaded to the FxSync server.
+A promise for an object with ciphertext, IV, and hmac, which can be JSON-stringified to get the payload to be uploaded to the FxSync server.
 
 ### decrypt
-This function JSON-parses the payload, checks the HMAC signature, and if that matches, uses AES-CBC to decrypt the ciphertext, given the IV.
+This function checks the payload.hmac signature, and if that matches, uses AES-CBC to decrypt payload.ciphertext, given payload.IV.
 
 Arguments:
-* payload: A JSON string encoding an object with fields ciphertext, IV, and hmac, presumably the payload of a download from the FxSync server.
+* payload: An object with fields ciphertext, IV, and hmac, presumably the JSON-parsed payload of a download from the FxSync server.
 * collectionName: The name of the FxSync collection for which to decrypt (see http://docs.services.mozilla.com/sync/storageformat5.html#decryption).
 Returns:
 A promise for an object (the record again that was originally JSON-stringified and encrypted on this or on another FxSync client).

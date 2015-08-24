@@ -157,17 +157,13 @@ FxSyncWebCrypto.prototype.selectKeyBundle = function() {
  * @returns {Promise} A promise for the decrypted Weave Basic Object.
  */
 FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
-  var recordEnc, keyBundle;
-  if (typeof payload !== 'string') {
-    return Promise.reject('Payload is not a string');
+  var keyBundle, ciphertextFromRaw, ciphertextFromBase64, ivFromBase64,
+      hmacFromHex;
+  if (typeof payload !== 'object') {
+    return Promise.reject('Payload is not an object');
   }
   if (typeof collectionName !== 'string') {
     return Promise.reject('collectionName is not a string');
-  }
-  try {
-    recordEnc = JSON.parse(payload);
-  } catch(e) {
-    return Promise.reject('Payload is not a JSON string');
   }
   try {
     keyBundle = this.selectKeyBundle(collectionName);
@@ -175,21 +171,55 @@ FxSyncWebCrypto.prototype.decrypt = function(payload, collectionName) {
     return Promise.reject('No key bundle found for ' + collectionName +
         ' - did you call setKeys?');
   }
+  try {
+    ciphertextFromRaw = StringConversion.rawStringToByteArray(
+        payload.ciphertext);
+    ciphertextFromBase64 = StringConversion.base64StringToByteArray(
+        payload.ciphertext);
+  } catch(e) {
+    return Promise.reject('payload.ciphertext is not a Base64 string');
+  }
+  try {
+    ivFromBase64 = StringConversion.base64StringToByteArray(payload.IV);
+  } catch(e) {
+    return Promise.reject('payload.IV is not a Base64 string');
+  }
+  try {
+    hmacFromHex = StringConversion.hexStringToByteArray(payload.hmac);
+  } catch(e) {
+    if (typeof payload.hmac === 'string') {
+      return Promise.reject('payload.hmac.length not a multiple of 2');
+    } else {
+      return Promise.reject('payload.hmac is not a string');
+    }
+  }
   return crypto.subtle.verify({ name: 'HMAC', hash: 'SHA-256' },
-      keyBundle.hmac, StringConversion.hexStringToByteArray(recordEnc.hmac),
-      StringConversion.rawStringToByteArray(recordEnc.ciphertext))
-      .then(function (result) {
+      keyBundle.hmac, hmacFromHex, ciphertextFromRaw).then(function (result) {
+    var hasNonHexBytes = function(str) {
+      for (var i=0; i<str.length; i++) {
+        if (isNaN(parseInt(str[i], 16))) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     if (!result) {
-      return Promise.reject(
-          'Record verification failed with current hmac key for ' +
-          collectionName);
+      if (hasNonHexBytes(payload.hmac)) {
+        return Promise.reject(
+            'payload.hmac contains non-hex characters');
+      } else {
+        return Promise.reject(
+            'Record verification failed with current hmac key for ' +
+            collectionName);
+      }
     }
   }).then(function() {
     return crypto.subtle.decrypt({
           name: 'AES-CBC',
-          iv: StringConversion.base64StringToByteArray(recordEnc.IV)
+          iv: ivFromBase64,
         }, keyBundle.aes,
-        StringConversion.base64StringToByteArray(recordEnc.ciphertext))
+        ciphertextFromBase64)
         .then(function (recordArrayBuffer) {
       var recordObj;
       var recordJSON = String.fromCharCode.apply(null,
@@ -221,11 +251,11 @@ FxSyncWebCrypto.prototype._encryptAndSign = function(keyBundle, cleartext) {
                        keyBundle.hmac,
                        StringConversion.rawStringToByteArray(ciphertextB64)
                       ).then(hmac => {
-      return JSON.stringify({
+      return {
         hmac: StringConversion.arrayBufferToHexString(hmac),
         ciphertext: ciphertextB64,
         IV: StringConversion.byteArrayToBase64String(IV)
-      });
+      };
     });
   });
 };
@@ -237,7 +267,7 @@ FxSyncWebCrypto.prototype._encryptAndSign = function(keyBundle, cleartext) {
  * @param {String} collectionName String The name of the Sync collection
  *     (currently ignored, see
  *     https://github.com/michielbdejong/fxsync-webcrypto/issues/19)
- * @returns {Promise} A promise for the encrypted Weave Basic Object.
+ * @returns {Promise} A promise for an object with ciphertext, IV, and hmac.
  */
 FxSyncWebCrypto.prototype.encrypt = function(record, collectionName) {
   var cleartext, cleartextStr, keyBundle;
