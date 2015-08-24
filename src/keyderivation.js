@@ -10,7 +10,7 @@ var KeyDerivation = (function() {
   var HASH_LENGTH = 32;
   var subtle = window.crypto.subtle;
 
-  concatU8Array = (buffer1, buffer2) => {
+  var concatU8Array = (buffer1, buffer2) => {
     var aux = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
     aux.set(new Uint8Array(buffer1), 0);
     aux.set(new Uint8Array(buffer2), buffer1.byteLength);
@@ -21,25 +21,33 @@ var KeyDerivation = (function() {
     name: "HMAC",
     hash: "SHA-256"
   };
-  doImportKey = rawKey => subtle.importKey('raw', rawKey, alg,
-                                           false, ['sign']);
+
+  var doImportKey = (rawKey) => {
+    return subtle.importKey('raw', rawKey, alg, false, ['sign']);
+  };
 
   // Converts a ArrayBuffer into a ArrayBufferView (U8) if it's not that
   // already.
-  var arrayBuffer2Uint8 =
-        buff => buff.buffer && buff || new Uint8Array(buff);
+  var arrayBuffer2Uint8 = (buff) => {
+    return buff.buffer && buff || new Uint8Array(buff);
+  };
 
-  doHMAC = (tbsData, hmacKey) =>
-    subtle.sign(alg.name, hmacKey, tbsData).then(arrayBuffer2Uint8);
+  var doHMAC = (tbsData, hmacKey) => {
+    return subtle.sign(alg.name, hmacKey, tbsData).then(arrayBuffer2Uint8);
+  };
 
-  doMAC = (tbhData) =>
-    subtle.digest(alg.hash, StringConversion.rawStringToByteArray(tbhData)).then(arrayBuffer2Uint8);
+  doMAC = (tbhData) => {
+    return subtle.digest(alg.hash,
+                         StringConversion.rawStringToByteArray(tbhData)
+    ).then(arrayBuffer2Uint8);
+  };
 
-  bitSlice = (arr, start, end) =>
-    (end !== undefined ? arr.subarray(start / 8, end / 8) :
+  bitSlice = (arr, start, end) => {
+    return (end !== undefined ? arr.subarray(start / 8, end / 8) :
                          arr.subarray(start / 8));
+  };
 
-  newEmptyArray = () => new Uint8Array(0);
+  var newEmptyArray = () => new Uint8Array(0);
 
   return {
     /**
@@ -59,20 +67,24 @@ var KeyDerivation = (function() {
         // checks if there are still more rounds left and fires the next
         // Or just finishes the process calling the callback.
         function addToOutput(digest) {
-          var output = prevOutput + StringConversion.byteArrayToHexString(digest);
+          var output = prevOutput +
+              StringConversion.byteArrayToHexString(digest);
 
           if (++roundNumber <= numBlocks) {
             return doHKDFRound(roundNumber, digest, output, hkdfKey);
           } else {
             return new Promise(function(resolve, reject) {
-              var truncated = bitSlice(StringConversion.hexStringToByteArray(output), 0, length * 8);
+              var truncated = bitSlice(
+                  StringConversion.hexStringToByteArray(output), 0,
+                  length * 8);
               resolve(truncated);
             });
           }
         }
         var input = concatU8Array(
           concatU8Array(prevDigest, info),
-          StringConversion.rawStringToByteArray(String.fromCharCode(roundNumber)));
+          StringConversion.rawStringToByteArray(
+               String.fromCharCode(roundNumber)));
         return doHMAC(input, hkdfKey).then(addToOutput);
       }
 

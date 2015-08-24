@@ -17,19 +17,23 @@ var StringConversion = {
 
   base64StringToByteArray: function(base64) {
     if (typeof base64 != 'string' || base64.length % 4 !== 0) {
-      throw new Error('Number of base64 digits must be a multiple of 4 to convert to bytes');
+      throw new Error(
+           'Number of base64 digits must be a multiple of 4 to convert to ' +
+           'bytes');
     }
     return this.rawStringToByteArray(window.atob(base64));
   },
 
   hexStringToByteArray: function(hexStr) {
     if (typeof hexStr != 'string' || hexStr.length % 2 !== 0) {
-      throw new Error('Must have an even number of hex digits to convert to bytes');
+      throw new Error(
+           'Must have an even number of hex digits to convert to bytes');
     }
     var numBytes = hexStr.length / 2;
     var byteArray = new Uint8Array(numBytes);
+    //FIXME: Can this be done faster?
     for (var i = 0; i < numBytes; i++) {
-      byteArray[i] = parseInt(hexStr.substr(i * 2, 2), 16); //FIXME: Can this be done faster?
+      byteArray[i] = parseInt(hexStr.substr(i * 2, 2), 16);
     }
     return byteArray;
   },
